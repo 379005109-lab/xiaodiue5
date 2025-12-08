@@ -102,9 +102,9 @@ void ACameraViewController::AutoConfigureFromCineCameras()
     {
         FString Name = Actor->GetActorLabel();
         
-        // 提取原始分类名称
-        int32 Index;
-        if (Name.FindChar(TEXT('镜')[0], Index))
+        // 提取原始分类名称（例如：休闲椅1镜头1 -> 休闲椅1）
+        int32 Index = Name.Find(TEXT("镜头"));
+        if (Index != INDEX_NONE)
         {
             FString OriginalCategory = Name.Left(Index);
             
