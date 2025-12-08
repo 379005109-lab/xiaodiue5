@@ -4,8 +4,8 @@ import unreal
 
 def get_all_cine_cameras():
     """获取关卡中所有的 CineCameraActor"""
-    editor_level_lib = unreal.EditorLevelLibrary()
-    all_actors = editor_level_lib.get_all_level_actors()
+    editor_actor_subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    all_actors = editor_actor_subsystem.get_all_level_actors()
     
     cameras = []
     for actor in all_actors:
@@ -67,10 +67,10 @@ def group_cameras_by_name(cameras):
 
 def configure_camera_controller(camera_groups):
     """配置 CameraViewController"""
-    editor_level_lib = unreal.EditorLevelLibrary()
-    all_actors = editor_level_lib.get_all_level_actors()
+    editor_actor_subsystem = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    all_actors = editor_actor_subsystem.get_all_level_actors()
     
-    # 查找或创建 CameraViewController
+    # 查找 CameraViewController
     camera_controller = None
     for actor in all_actors:
         if actor.get_class().get_name() == 'CameraViewController':
@@ -79,9 +79,11 @@ def configure_camera_controller(camera_groups):
     
     if not camera_controller:
         print("未找到 CameraViewController，正在创建...")
-        # 创建新的 CameraViewController
-        camera_controller_class = unreal.EditorAssetLibrary.load_blueprint_class('/Script/chaji.CameraViewController')
-        camera_controller = editor_level_lib.spawn_actor_from_class(camera_controller_class, unreal.Vector(0, 0, 0))
+        # 直接使用 C++ 类创建
+        camera_controller = editor_actor_subsystem.spawn_actor_from_class(
+            unreal.CameraViewController, 
+            unreal.Vector(0, 0, 0)
+        )
     
     print(f"找到 CameraViewController: {camera_controller.get_actor_label()}")
     
