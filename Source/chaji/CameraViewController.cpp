@@ -3,8 +3,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
-#include "CineCameraComponent.h"
-#include "Engine/World.h"
 
 ACameraViewController::ACameraViewController()
 {
