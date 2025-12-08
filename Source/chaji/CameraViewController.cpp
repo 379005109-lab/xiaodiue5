@@ -3,7 +3,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
-#include "CineCameraActor.h"
+#include "CineCameraComponent.h"
+#include "Engine/World.h"
 
 ACameraViewController::ACameraViewController()
 {
@@ -83,9 +84,18 @@ void ACameraViewController::AutoConfigureFromCineCameras()
     CategoryMapping.Add(TEXT("玄关柜"), {TEXT("玄关柜")});
     CategoryMapping.Add(TEXT("地板"), {TEXT("地板")});
     
-    // 获取所有 CineCameraActor
+    // 获取所有包含"镜头"的 Actor
+    TArray<AActor*> AllActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), AllActors);
+    
     TArray<AActor*> CameraActors;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACineCameraActor::StaticClass(), CameraActors);
+    for (AActor* Actor : AllActors)
+    {
+        if (Actor->GetActorLabel().Contains(TEXT("镜头")))
+        {
+            CameraActors.Add(Actor);
+        }
+    }
     
     // 临时存储
     TMap<FString, TArray<FTransform>> TempGroups;
