@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Input/Reply.h"
 #include "ViewpointListWidget.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnViewpointSelected, int32, ViewpointIndex);
@@ -24,10 +23,16 @@ public:
     void SetSelectedIndex(int32 Index);
     
     UFUNCTION(BlueprintCallable)
+    void SelectViewpoint(int32 Index);
+    
+    UFUNCTION(BlueprintCallable)
     void Show();
     
     UFUNCTION(BlueprintCallable)
     void Hide();
+    
+    UFUNCTION(BlueprintCallable)
+    int32 GetViewpointCount() const { return ViewpointCount; }
 
 protected:
     virtual void NativeConstruct() override;
@@ -35,11 +40,8 @@ protected:
 
 private:
     TSharedPtr<class SVerticalBox> ViewpointContainer;
-    TSharedPtr<class SBorder> RootBorder;
     int32 ViewpointCount = 0;
     int32 SelectedIndex = 0;
-    bool bIsVisible = false;
 
     void CreateViewpointButtons();
-    FReply HandleViewpointClick(int32 Index);
 };
