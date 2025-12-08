@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class 诧寂1 : ModuleRules
+public class chaji : ModuleRules
 {
-    public 诧寂1(ReadOnlyTargetRules Target) : base(Target)
+    public chaji(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
     
