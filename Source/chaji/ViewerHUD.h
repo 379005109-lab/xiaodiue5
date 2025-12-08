@@ -5,6 +5,7 @@
 #include "GameFramework/HUD.h"
 #include "CategoryTabWidget.h"
 #include "ViewpointControlWidget.h"
+#include "PhotoCaptureWidget.h"
 #include "CameraViewController.h"
 #include "ViewerHUD.generated.h"
 
@@ -25,6 +26,9 @@ private:
     
     UPROPERTY()
     UViewpointControlWidget* ViewpointControl;
+    
+    UPROPERTY()
+    UPhotoCaptureWidget* PhotoCapture;
 
     UPROPERTY()
     ACameraViewController* CameraController;

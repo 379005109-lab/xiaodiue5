@@ -23,11 +23,11 @@ TSharedRef<SWidget> UCategoryTabWidget::RebuildWidget()
             SNew(SButton)
             .ButtonColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 0.9f))
             .OnClicked_Lambda([this]() { return OnToggleClicked(); })
-            .ContentPadding(FMargin(8.0f))
+            .ContentPadding(FMargin(10.0f, 8.0f))
             [
                 SNew(STextBlock)
-                .Text(FText::FromString(TEXT("☰")))
-                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
+                .Text_Lambda([this]() { return FText::FromString(bIsExpanded ? TEXT("◀") : TEXT("▶")); })
+                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 16))
                 .ColorAndOpacity(FLinearColor::White)
             ]
         ]

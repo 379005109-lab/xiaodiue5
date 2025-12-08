@@ -58,13 +58,13 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create the viewpoint control widget (bottom-left)
+    // Create the viewpoint control widget (bottom-left, anchored to bottom)
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(9);
-        // Position at bottom-left (adjust Y based on screen height)
-        ViewpointControl->SetPositionInViewport(FVector2D(20.0f, 600.0f));
+        // Position at bottom-left corner
+        ViewpointControl->SetPositionInViewport(FVector2D(20.0f, -120.0f));
         ViewpointControl->SetAlignmentInViewport(FVector2D(0.0f, 1.0f));
         
         // Bind viewpoint change event
@@ -75,6 +75,15 @@ void AViewerHUD::SetupUI()
         {
             ViewpointControl->SetViewpointCount(CameraController->Categories[0].Viewpoints.Num());
         }
+    }
+    
+    // Create the photo capture widget (top-right)
+    PhotoCapture = CreateWidget<UPhotoCaptureWidget>(PC, UPhotoCaptureWidget::StaticClass());
+    if (PhotoCapture)
+    {
+        PhotoCapture->AddToViewport(8);
+        PhotoCapture->SetPositionInViewport(FVector2D(-20.0f, 30.0f));
+        PhotoCapture->SetAlignmentInViewport(FVector2D(1.0f, 0.0f));
     }
     
     // Set input mode to allow UI interaction while keeping game input
