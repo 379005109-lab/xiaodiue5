@@ -10,9 +10,12 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/GameViewportClient.h"
+#include "Engine/PostProcessVolume.h"
+#include "Components/PostProcessComponent.h"
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Framework/Application/SlateApplication.h"
 
 TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
 {
@@ -213,6 +216,7 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
 void UPhotoCaptureWidget::InitWidget()
 {
     UpdateParameterDisplay();
+    ApplyAllCameraSettings();
 }
 
 void UPhotoCaptureWidget::UpdateParameterDisplay()
@@ -227,20 +231,41 @@ void UPhotoCaptureWidget::UpdateParameterDisplay()
     }
     if (FocusDistanceText.IsValid())
     {
-        FocusDistanceText->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), FocusDistance)));
+        FocusDistanceText->SetText(FText::FromString(FString::Printf(TEXT("%.0fcm"), FocusDistance)));
     }
 }
 
-void UPhotoCaptureWidget::ApplyToPlayerCamera()
+void UPhotoCaptureWidget::ApplyAllCameraSettings()
 {
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-    if (PC && PC->PlayerCameraManager)
+    if (!PC || !PC->PlayerCameraManager) return;
+    
+    // Apply FOV based on focal length
+    float FOV = 2.0f * FMath::RadiansToDegrees(FMath::Atan(18.0f / FocalLength));
+    PC->PlayerCameraManager->SetFOV(FOV);
+    
+    // Apply DOF settings via post process
+    FPostProcessSettings PPSettings;
+    PPSettings.bOverride_DepthOfFieldFstop = true;
+    PPSettings.DepthOfFieldFstop = Aperture;
+    PPSettings.bOverride_DepthOfFieldFocalDistance = true;
+    PPSettings.DepthOfFieldFocalDistance = FocusDistance;
+    PPSettings.bOverride_DepthOfFieldSensorWidth = true;
+    PPSettings.DepthOfFieldSensorWidth = 36.0f; // Full frame
+    
+    // Find or create camera with post process
+    if (APawn* Pawn = PC->GetPawn())
     {
-        // Apply FOV based on focal length (approximate conversion)
-        // FOV = 2 * atan(SensorWidth / (2 * FocalLength))
-        // Using 36mm full frame sensor width
-        float FOV = 2.0f * FMath::RadiansToDegrees(FMath::Atan(18.0f / FocalLength));
-        PC->PlayerCameraManager->SetFOV(FOV);
+        UCameraComponent* CamComp = Pawn->FindComponentByClass<UCameraComponent>();
+        if (CamComp)
+        {
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldFstop = true;
+            CamComp->PostProcessSettings.DepthOfFieldFstop = Aperture;
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldFocalDistance = true;
+            CamComp->PostProcessSettings.DepthOfFieldFocalDistance = FocusDistance;
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldSensorWidth = true;
+            CamComp->PostProcessSettings.DepthOfFieldSensorWidth = 36.0f;
+        }
     }
 }
 
@@ -256,29 +281,20 @@ FReply UPhotoCaptureWidget::OnToggleClicked()
 
 FReply UPhotoCaptureWidget::OnCaptureClicked()
 {
-    // Get screenshot directory
-    FString ScreenshotDir = FPaths::ProjectSavedDir() / TEXT("Screenshots");
-    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-    PlatformFile.CreateDirectoryTree(*ScreenshotDir);
-    
-    // Generate filename with timestamp
-    FString Filename = FString::Printf(TEXT("Photo_%s.png"), *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
-    FString FullPath = ScreenshotDir / Filename;
-    
-    // Take screenshot using console command for high resolution
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (PC)
     {
-        FString Command = FString::Printf(TEXT("HighResShot %dx filename=\"%s\""), ScreenshotScale, *FullPath);
+        // Use HighResShot console command
+        FString Command = FString::Printf(TEXT("HighResShot %d"), ScreenshotScale);
         PC->ConsoleCommand(Command);
         
         // Update status
         if (StatusText.IsValid())
         {
-            StatusText->SetText(FText::FromString(FString::Printf(TEXT("已保存: %s"), *Filename)));
+            StatusText->SetText(FText::FromString(TEXT("截图已保存到 Saved/Screenshots")));
         }
         
-        UE_LOG(LogTemp, Log, TEXT("Screenshot saved to: %s"), *FullPath);
+        UE_LOG(LogTemp, Log, TEXT("High resolution screenshot captured at %dx scale"), ScreenshotScale);
     }
     
     return FReply::Handled();
@@ -288,19 +304,67 @@ void UPhotoCaptureWidget::OnFocalLengthChanged(float Value)
 {
     FocalLength = 10.0f + Value * 190.0f; // 10mm to 200mm
     UpdateParameterDisplay();
-    ApplyToPlayerCamera();
+    ApplyAllCameraSettings();
 }
 
 void UPhotoCaptureWidget::OnApertureChanged(float Value)
 {
     Aperture = 1.2f + Value * 20.8f; // f/1.2 to f/22
     UpdateParameterDisplay();
-    // Aperture affects DOF, which requires post-process settings
+    ApplyAllCameraSettings();
 }
 
 void UPhotoCaptureWidget::OnFocusDistanceChanged(float Value)
 {
-    FocusDistance = Value * 10000.0f; // 0 to 10000
+    FocusDistance = 50.0f + Value * 9950.0f; // 50cm to 10000cm
     UpdateParameterDisplay();
-    // Focus distance affects DOF focus plane
+    ApplyAllCameraSettings();
+}
+
+// Scroll wheel shortcuts
+FReply UPhotoCaptureWidget::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    float Delta = InMouseEvent.GetWheelDelta();
+    
+    if (FSlateApplication::Get().GetModifierKeys().IsControlDown())
+    {
+        // Ctrl + Scroll = Focal Length
+        AdjustFocalLength(Delta * 5.0f);
+        return FReply::Handled();
+    }
+    else if (FSlateApplication::Get().GetModifierKeys().IsShiftDown())
+    {
+        // Shift + Scroll = Aperture
+        AdjustAperture(Delta * 0.5f);
+        return FReply::Handled();
+    }
+    else if (FSlateApplication::Get().GetModifierKeys().IsAltDown())
+    {
+        // Alt + Scroll = Focus Distance
+        AdjustFocusDistance(Delta * 100.0f);
+        return FReply::Handled();
+    }
+    
+    return Super::NativeOnMouseWheel(InGeometry, InMouseEvent);
+}
+
+void UPhotoCaptureWidget::AdjustFocalLength(float Delta)
+{
+    FocalLength = FMath::Clamp(FocalLength + Delta, 10.0f, 200.0f);
+    UpdateParameterDisplay();
+    ApplyAllCameraSettings();
+}
+
+void UPhotoCaptureWidget::AdjustAperture(float Delta)
+{
+    Aperture = FMath::Clamp(Aperture + Delta, 1.2f, 22.0f);
+    UpdateParameterDisplay();
+    ApplyAllCameraSettings();
+}
+
+void UPhotoCaptureWidget::AdjustFocusDistance(float Delta)
+{
+    FocusDistance = FMath::Clamp(FocusDistance + Delta, 50.0f, 10000.0f);
+    UpdateParameterDisplay();
+    ApplyAllCameraSettings();
 }

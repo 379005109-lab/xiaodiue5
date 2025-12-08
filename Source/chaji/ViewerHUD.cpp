@@ -58,12 +58,25 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create the viewpoint control widget (bottom-left)
+    // Get viewport size for responsive positioning
+    FVector2D ViewportSize;
+    if (GEngine && GEngine->GameViewport)
+    {
+        GEngine->GameViewport->GetViewportSize(ViewportSize);
+    }
+    else
+    {
+        ViewportSize = FVector2D(1920.0f, 1080.0f); // Default fallback
+    }
+    
+    // Create the viewpoint control widget (bottom-left, 2% from left, 95% from top)
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(9);
-        ViewpointControl->SetPositionInViewport(FVector2D(20.0f, 580.0f));
+        float PosX = ViewportSize.X * 0.02f;
+        float PosY = ViewportSize.Y * 0.88f;
+        ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
         
         // Bind viewpoint change event
         ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
@@ -75,12 +88,14 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create the photo capture widget (top-right)
+    // Create the photo capture widget (top-right, 85% from left, 3% from top)
     PhotoCapture = CreateWidget<UPhotoCaptureWidget>(PC, UPhotoCaptureWidget::StaticClass());
     if (PhotoCapture)
     {
         PhotoCapture->AddToViewport(8);
-        PhotoCapture->SetPositionInViewport(FVector2D(800.0f, 30.0f));
+        float PosX = ViewportSize.X * 0.82f;
+        float PosY = ViewportSize.Y * 0.03f;
+        PhotoCapture->SetPositionInViewport(FVector2D(PosX, PosY));
         PhotoCapture->InitWidget();
     }
     

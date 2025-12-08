@@ -13,9 +13,15 @@ class UPhotoCaptureWidget : public UUserWidget
 public:
     UFUNCTION(BlueprintCallable)
     void InitWidget();
+    
+    // Called from PlayerController for scroll wheel shortcuts
+    void AdjustFocalLength(float Delta);
+    void AdjustAperture(float Delta);
+    void AdjustFocusDistance(float Delta);
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
+    virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 private:
     TSharedPtr<class SBox> ContentBox;
@@ -33,7 +39,7 @@ private:
     int32 ScreenshotScale = 4;
     
     void UpdateParameterDisplay();
-    void ApplyToPlayerCamera();
+    void ApplyAllCameraSettings();
     
     FReply OnToggleClicked();
     FReply OnCaptureClicked();
