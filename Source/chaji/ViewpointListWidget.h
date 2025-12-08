@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Input/Reply.h"
 #include "ViewpointListWidget.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnViewpointSelected, int32, ViewpointIndex);
@@ -40,7 +41,5 @@ private:
     bool bIsVisible = false;
 
     void CreateViewpointButtons();
-    
-    UFUNCTION()
     FReply OnViewpointClicked(int32 Index);
 };
