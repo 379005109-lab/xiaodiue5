@@ -15,11 +15,35 @@ TSharedRef<SWidget> UCategoryTabWidget::RebuildWidget()
 {
     TabContainer = SNew(SHorizontalBox);
     
-    return SNew(SBorder)
-        .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.8f))
-        .Padding(FMargin(10.0f))
+    return SNew(SHorizontalBox)
+        // Toggle Button
+        + SHorizontalBox::Slot()
+        .AutoWidth()
         [
-            TabContainer.ToSharedRef()
+            SNew(SButton)
+            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 0.9f))
+            .OnClicked_Lambda([this]() { return OnToggleClicked(); })
+            .ContentPadding(FMargin(8.0f))
+            [
+                SNew(STextBlock)
+                .Text(FText::FromString(TEXT("☰")))
+                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
+                .ColorAndOpacity(FLinearColor::White)
+            ]
+        ]
+        // Content
+        + SHorizontalBox::Slot()
+        .AutoWidth()
+        [
+            SAssignNew(ContentBox, SBox)
+            [
+                SNew(SBorder)
+                .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.8f))
+                .Padding(FMargin(10.0f))
+                [
+                    TabContainer.ToSharedRef()
+                ]
+            ]
         ];
 }
 
@@ -70,4 +94,19 @@ FReply UCategoryTabWidget::OnTabClicked(int32 Index)
     CreateTabs();
     OnCategorySelected.Broadcast(Index);
     return FReply::Handled();
+}
+
+FReply UCategoryTabWidget::OnToggleClicked()
+{
+    bIsExpanded = !bIsExpanded;
+    UpdateVisibility();
+    return FReply::Handled();
+}
+
+void UCategoryTabWidget::UpdateVisibility()
+{
+    if (ContentBox.IsValid())
+    {
+        ContentBox->SetVisibility(bIsExpanded ? EVisibility::Visible : EVisibility::Collapsed);
+    }
 }

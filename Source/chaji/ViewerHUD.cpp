@@ -40,12 +40,12 @@ void AViewerHUD::SetupUI()
     APlayerController* PC = GetOwningPlayerController();
     if (!PC) return;
     
-    // Create the tab widget (top)
+    // Create the tab widget (top-left)
     TabWidget = CreateWidget<UCategoryTabWidget>(PC, UCategoryTabWidget::StaticClass());
     if (TabWidget)
     {
         TabWidget->AddToViewport(10);
-        TabWidget->SetPositionInViewport(FVector2D(50.0f, 50.0f));
+        TabWidget->SetPositionInViewport(FVector2D(20.0f, 30.0f));
         
         // Bind category selection event
         TabWidget->OnCategorySelected.AddDynamic(this, &AViewerHUD::OnCategorySelected);
@@ -63,7 +63,9 @@ void AViewerHUD::SetupUI()
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(9);
-        ViewpointControl->SetPositionInViewport(FVector2D(50.0f, 650.0f));
+        // Position at bottom-left (adjust Y based on screen height)
+        ViewpointControl->SetPositionInViewport(FVector2D(20.0f, 600.0f));
+        ViewpointControl->SetAlignmentInViewport(FVector2D(0.0f, 1.0f));
         
         // Bind viewpoint change event
         ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);

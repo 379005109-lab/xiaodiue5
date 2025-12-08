@@ -3,9 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/HorizontalBox.h"
-#include "Components/Button.h"
-#include "Components/TextBlock.h"
 #include "CategoryTabWidget.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCategorySelected, int32, CategoryIndex);
@@ -30,10 +27,14 @@ protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
 
 private:
-    TSharedPtr<SHorizontalBox> TabContainer;
     TArray<FString> Categories;
     int32 SelectedIndex = 0;
+    bool bIsExpanded = true;
+    TSharedPtr<SHorizontalBox> TabContainer;
+    TSharedPtr<SBox> ContentBox;
 
     void CreateTabs();
+    void UpdateVisibility();
     FReply OnTabClicked(int32 Index);
+    FReply OnToggleClicked();
 };

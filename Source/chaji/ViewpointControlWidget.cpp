@@ -9,11 +9,36 @@
 
 TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
 {
-    return SNew(SBorder)
-        .BorderBackgroundColor(FLinearColor(0.05f, 0.05f, 0.05f, 0.85f))
-        .Padding(FMargin(10.0f))
+    return SNew(SHorizontalBox)
+        // Toggle Button
+        + SHorizontalBox::Slot()
+        .AutoWidth()
+        .VAlign(VAlign_Bottom)
         [
-            SAssignNew(ThumbnailContainer, SHorizontalBox)
+            SNew(SButton)
+            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 0.9f))
+            .OnClicked_Lambda([this]() { return OnToggleClicked(); })
+            .ContentPadding(FMargin(10.0f))
+            [
+                SNew(STextBlock)
+                .Text(FText::FromString(TEXT("⊕")))
+                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 20))
+                .ColorAndOpacity(FLinearColor::White)
+            ]
+        ]
+        // Content
+        + SHorizontalBox::Slot()
+        .AutoWidth()
+        [
+            SAssignNew(ContentBox, SBox)
+            [
+                SNew(SBorder)
+                .BorderBackgroundColor(FLinearColor(0.05f, 0.05f, 0.05f, 0.85f))
+                .Padding(FMargin(10.0f))
+                [
+                    SAssignNew(ThumbnailContainer, SHorizontalBox)
+                ]
+            ]
         ];
 }
 
@@ -85,4 +110,19 @@ FReply UViewpointControlWidget::OnThumbnailClicked(int32 Index)
         OnViewpointChanged.Broadcast(Index);
     }
     return FReply::Handled();
+}
+
+FReply UViewpointControlWidget::OnToggleClicked()
+{
+    bIsExpanded = !bIsExpanded;
+    UpdateVisibility();
+    return FReply::Handled();
+}
+
+void UViewpointControlWidget::UpdateVisibility()
+{
+    if (ContentBox.IsValid())
+    {
+        ContentBox->SetVisibility(bIsExpanded ? EVisibility::Visible : EVisibility::Collapsed);
+    }
 }

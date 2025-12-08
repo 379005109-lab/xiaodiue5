@@ -27,9 +27,13 @@ protected:
 
 private:
     TSharedPtr<class SHorizontalBox> ThumbnailContainer;
+    TSharedPtr<class SBox> ContentBox;
     int32 ViewpointCount = 0;
     int32 CurrentViewpoint = 0;
+    bool bIsExpanded = true;
 
     void RebuildThumbnails();
+    void UpdateVisibility();
     FReply OnThumbnailClicked(int32 Index);
+    FReply OnToggleClicked();
 };
