@@ -15,35 +15,55 @@ def get_all_cine_cameras():
     return cameras
 
 def group_cameras_by_name(cameras):
-    """根据名称分组相机"""
-    groups = {}
+    """根据名称分组相机 - 合并子分类"""
+    # 主分类映射
+    category_mapping = {
+        '沙发': ['沙发'],
+        '椅子': ['休闲椅1', '休闲椅2', '休闲椅3'],
+        '床': ['大床'],
+        '茶几': ['茶几1'],
+        '边几': ['边几1', '边几2', '边几3'],
+        '床头柜': ['床头柜1', '床头柜2'],
+        '玄关柜': ['玄关柜'],
+        '地板': ['地板']
+    }
+    
+    # 临时存储
+    temp_groups = {}
     
     for camera in cameras:
         name = camera.get_actor_label()
         
-        # 提取分类名称（例如：休闲椅1镜头1 -> 休闲椅1）
-        category_name = None
+        # 提取原始分类名称
+        original_category = None
         if '镜头' in name:
             parts = name.split('镜头')
             if len(parts) >= 2:
-                category_name = parts[0]
+                original_category = parts[0]
         
-        if category_name:
-            if category_name not in groups:
-                groups[category_name] = []
+        if original_category:
+            if original_category not in temp_groups:
+                temp_groups[original_category] = []
             
             # 获取 Transform
             transform = camera.get_actor_transform()
-            groups[category_name].append({
+            temp_groups[original_category].append({
                 'name': name,
                 'transform': transform
             })
     
-    # 按名称排序
-    for category in groups:
-        groups[category].sort(key=lambda x: x['name'])
+    # 合并为主分类
+    main_groups = {}
+    for main_cat, sub_cats in category_mapping.items():
+        main_groups[main_cat] = []
+        for sub_cat in sub_cats:
+            if sub_cat in temp_groups:
+                main_groups[main_cat].extend(temp_groups[sub_cat])
+        
+        # 按名称排序
+        main_groups[main_cat].sort(key=lambda x: x['name'])
     
-    return groups
+    return main_groups
 
 def configure_camera_controller(camera_groups):
     """配置 CameraViewController"""
