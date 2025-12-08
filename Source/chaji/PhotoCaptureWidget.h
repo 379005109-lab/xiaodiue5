@@ -12,7 +12,7 @@ class UPhotoCaptureWidget : public UUserWidget
 
 public:
     UFUNCTION(BlueprintCallable)
-    void Initialize();
+    void InitWidget();
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;

@@ -210,7 +210,7 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
         ];
 }
 
-void UPhotoCaptureWidget::Initialize()
+void UPhotoCaptureWidget::InitWidget()
 {
     UpdateParameterDisplay();
 }

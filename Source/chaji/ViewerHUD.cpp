@@ -85,7 +85,7 @@ void AViewerHUD::SetupUI()
         // Anchor to top-right
         PhotoCapture->SetAnchorsInViewport(FAnchors(1.0f, 0.0f, 1.0f, 0.0f));
         PhotoCapture->SetPositionInViewport(FVector2D(-200.0f, 30.0f));
-        PhotoCapture->Initialize();
+        PhotoCapture->InitWidget();
     }
     
     // Set input mode to allow UI interaction while keeping game input
