@@ -4,6 +4,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Layout/SBorder.h"
+#include "Styling/CoreStyle.h"
 
 void UCategoryTabWidget::NativeConstruct()
 {
@@ -56,7 +57,7 @@ void UCategoryTabWidget::CreateTabs()
                 [
                     SNew(STextBlock)
                     .Text(FText::FromString(Categories[i]))
-                    .Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 16))
+                    .Font(FCoreStyle::GetDefaultFontStyle("Bold", 16))
                     .ColorAndOpacity(FLinearColor::White)
                 ]
             ];
