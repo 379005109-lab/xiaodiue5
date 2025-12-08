@@ -34,10 +34,13 @@ protected:
 
 private:
     TSharedPtr<class SVerticalBox> ViewpointContainer;
+    TSharedPtr<class SBorder> RootBorder;
     int32 ViewpointCount = 0;
     int32 SelectedIndex = 0;
     bool bIsVisible = false;
 
     void CreateViewpointButtons();
+    
+    UFUNCTION()
     FReply OnViewpointClicked(int32 Index);
 };

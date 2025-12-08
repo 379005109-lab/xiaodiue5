@@ -4,29 +4,25 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Layout/SBorder.h"
-#include "Widgets/Layout/SScrollBox.h"
 
 void UViewpointListWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+    CreateViewpointButtons();
 }
 
 TSharedRef<SWidget> UViewpointListWidget::RebuildWidget()
 {
     ViewpointContainer = SNew(SVerticalBox);
     
-    return SNew(SBorder)
+    RootBorder = SNew(SBorder)
         .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.9f))
         .Padding(FMargin(10.0f))
-        .Visibility(bIsVisible ? EVisibility::Visible : EVisibility::Collapsed)
         [
-            SNew(SScrollBox)
-            .Orientation(Orient_Vertical)
-            + SScrollBox::Slot()
-            [
-                ViewpointContainer.ToSharedRef()
-            ]
+            ViewpointContainer.ToSharedRef()
         ];
+    
+    return RootBorder.ToSharedRef();
 }
 
 void UViewpointListWidget::SetViewpoints(int32 Count)
@@ -68,6 +64,7 @@ void UViewpointListWidget::CreateViewpointButtons()
             : FLinearColor(0.4f, 0.4f, 0.4f, 1.0f);
         
         FString ButtonText = FString::Printf(TEXT("镜头 %d"), i + 1);
+        int32 ButtonIndex = i;
         
         ViewpointContainer->AddSlot()
             .Padding(FMargin(0.0f, 5.0f))
@@ -75,7 +72,7 @@ void UViewpointListWidget::CreateViewpointButtons()
             [
                 SNew(SButton)
                 .ButtonColorAndOpacity(ButtonColor)
-                .OnClicked_Lambda([this, i]() { return OnViewpointClicked(i); })
+                .OnClicked(FOnClicked::CreateUObject(this, &UViewpointListWidget::OnViewpointClicked, ButtonIndex))
                 .ContentPadding(FMargin(15.0f, 8.0f))
                 [
                     SNew(STextBlock)
