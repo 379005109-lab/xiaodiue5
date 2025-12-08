@@ -58,6 +58,23 @@ void AViewerHUD::SetupUI()
         }
     }
     
+    // Create the viewpoint control widget (bottom-left)
+    ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
+    if (ViewpointControl)
+    {
+        ViewpointControl->AddToViewport(9);
+        ViewpointControl->SetPositionInViewport(FVector2D(50.0f, 650.0f));
+        
+        // Bind viewpoint change event
+        ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
+        
+        // Set initial viewpoint count
+        if (CameraController && CameraController->Categories.Num() > 0)
+        {
+            ViewpointControl->SetViewpointCount(CameraController->Categories[0].Viewpoints.Num());
+        }
+    }
+    
     // Set input mode to allow UI interaction while keeping game input
     FInputModeGameAndUI InputMode;
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -71,10 +88,24 @@ void AViewerHUD::OnCategorySelected(int32 Index)
     if (CameraController)
     {
         CameraController->SwitchCategory(Index);
+        
+        // Update viewpoint count for the new category
+        if (ViewpointControl && Index >= 0 && Index < CameraController->Categories.Num())
+        {
+            ViewpointControl->SetViewpointCount(CameraController->Categories[Index].Viewpoints.Num());
+        }
     }
     
     if (TabWidget)
     {
         TabWidget->SetSelectedIndex(Index);
+    }
+}
+
+void AViewerHUD::OnViewpointChanged(int32 Index)
+{
+    if (CameraController)
+    {
+        CameraController->SetViewpoint(Index);
     }
 }

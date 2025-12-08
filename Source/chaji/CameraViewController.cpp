@@ -42,6 +42,18 @@ void ACameraViewController::NextViewpoint()
     MoveToCurrentViewpoint();
 }
 
+void ACameraViewController::SetViewpoint(int32 Index)
+{
+    if (Categories.Num() == 0) return;
+    
+    const FCategoryViewpoint& Category = Categories[CurrentCategoryIndex];
+    if (Index >= 0 && Index < Category.Viewpoints.Num())
+    {
+        CurrentViewpointIndex = Index;
+        MoveToCurrentViewpoint();
+    }
+}
+
 TArray<FString> ACameraViewController::GetCategoryNames()
 {
     TArray<FString> Names;

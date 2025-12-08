@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "CategoryTabWidget.h"
+#include "ViewpointControlWidget.h"
 #include "CameraViewController.h"
 #include "ViewerHUD.generated.h"
 
@@ -21,6 +22,9 @@ protected:
 private:
     UPROPERTY()
     UCategoryTabWidget* TabWidget;
+    
+    UPROPERTY()
+    UViewpointControlWidget* ViewpointControl;
 
     UPROPERTY()
     ACameraViewController* CameraController;
@@ -29,4 +33,7 @@ private:
 
     UFUNCTION()
     void OnCategorySelected(int32 Index);
+    
+    UFUNCTION()
+    void OnViewpointChanged(int32 Index);
 };

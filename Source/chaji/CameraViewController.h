@@ -41,6 +41,9 @@ public:
     void NextViewpoint();
 
     UFUNCTION(BlueprintCallable)
+    void SetViewpoint(int32 Index);
+
+    UFUNCTION(BlueprintCallable)
     TArray<FString> GetCategoryNames();
 
     UFUNCTION(BlueprintCallable)
