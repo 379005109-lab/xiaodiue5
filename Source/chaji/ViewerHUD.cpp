@@ -19,6 +19,18 @@ void AViewerHUD::BeginPlay()
     {
         CameraController = Cast<ACameraViewController>(FoundActors[0]);
     }
+    else
+    {
+        // Auto-create CameraViewController if not found
+        FActorSpawnParameters SpawnParams;
+        CameraController = GetWorld()->SpawnActor<ACameraViewController>(ACameraViewController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+        
+        if (CameraController)
+        {
+            // Auto-configure from CineCameraActors
+            CameraController->AutoConfigureFromCineCameras();
+        }
+    }
     
     SetupUI();
 }

@@ -43,6 +43,9 @@ public:
     UFUNCTION(BlueprintCallable)
     TArray<FString> GetCategoryNames();
 
+    UFUNCTION(BlueprintCallable)
+    void AutoConfigureFromCineCameras();
+
 protected:
     virtual void BeginPlay() override;
 
