@@ -4,58 +4,16 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Layout/SBorder.h"
+#include "Widgets/Images/SImage.h"
 #include "Styling/CoreStyle.h"
 
 TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
 {
     return SNew(SBorder)
-        .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.9f))
-        .Padding(FMargin(15.0f))
+        .BorderBackgroundColor(FLinearColor(0.05f, 0.05f, 0.05f, 0.85f))
+        .Padding(FMargin(10.0f))
         [
-            SNew(SHorizontalBox)
-            // - Button
-            + SHorizontalBox::Slot()
-            .AutoWidth()
-            .Padding(FMargin(0.0f, 0.0f, 10.0f, 0.0f))
-            [
-                SNew(SButton)
-                .ButtonColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f))
-                .OnClicked_Lambda([this]() { return OnPrevClicked(); })
-                .ContentPadding(FMargin(15.0f, 8.0f))
-                [
-                    SNew(STextBlock)
-                    .Text(FText::FromString(TEXT("-")))
-                    .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
-                    .ColorAndOpacity(FLinearColor::White)
-                ]
-            ]
-            // Current Viewpoint Text
-            + SHorizontalBox::Slot()
-            .AutoWidth()
-            .VAlign(VAlign_Center)
-            .Padding(FMargin(10.0f, 0.0f))
-            [
-                SAssignNew(ViewpointText, STextBlock)
-                .Text(FText::FromString(TEXT("镜头 1/1")))
-                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 16))
-                .ColorAndOpacity(FLinearColor::White)
-            ]
-            // + Button
-            + SHorizontalBox::Slot()
-            .AutoWidth()
-            .Padding(FMargin(10.0f, 0.0f, 0.0f, 0.0f))
-            [
-                SNew(SButton)
-                .ButtonColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f))
-                .OnClicked_Lambda([this]() { return OnNextClicked(); })
-                .ContentPadding(FMargin(15.0f, 8.0f))
-                [
-                    SNew(STextBlock)
-                    .Text(FText::FromString(TEXT("+")))
-                    .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
-                    .ColorAndOpacity(FLinearColor::White)
-                ]
-            ]
+            SAssignNew(ThumbnailContainer, SHorizontalBox)
         ];
 }
 
@@ -63,42 +21,68 @@ void UViewpointControlWidget::SetViewpointCount(int32 Count)
 {
     ViewpointCount = Count;
     CurrentViewpoint = 0;
-    UpdateDisplay();
+    RebuildThumbnails();
 }
 
 void UViewpointControlWidget::SetCurrentViewpoint(int32 Index)
 {
     CurrentViewpoint = Index;
-    UpdateDisplay();
+    RebuildThumbnails();
 }
 
-void UViewpointControlWidget::UpdateDisplay()
+void UViewpointControlWidget::RebuildThumbnails()
 {
-    if (ViewpointText.IsValid())
+    if (!ThumbnailContainer.IsValid()) return;
+    
+    ThumbnailContainer->ClearChildren();
+    
+    for (int32 i = 0; i < ViewpointCount; i++)
     {
-        FString Text = FString::Printf(TEXT("镜头 %d/%d"), CurrentViewpoint + 1, ViewpointCount);
-        ViewpointText->SetText(FText::FromString(Text));
+        bool bIsSelected = (i == CurrentViewpoint);
+        FLinearColor BorderColor = bIsSelected ? FLinearColor(0.2f, 0.6f, 1.0f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f);
+        FLinearColor BgColor = bIsSelected ? FLinearColor(0.15f, 0.15f, 0.2f, 1.0f) : FLinearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        
+        ThumbnailContainer->AddSlot()
+            .AutoWidth()
+            .Padding(FMargin(5.0f))
+            [
+                SNew(SButton)
+                .ButtonColorAndOpacity(BgColor)
+                .OnClicked_Lambda([this, i]() { return OnThumbnailClicked(i); })
+                .ContentPadding(FMargin(0.0f))
+                [
+                    SNew(SBorder)
+                    .BorderBackgroundColor(BorderColor)
+                    .Padding(FMargin(3.0f))
+                    [
+                        SNew(SBox)
+                        .WidthOverride(120.0f)
+                        .HeightOverride(70.0f)
+                        [
+                            SNew(SBorder)
+                            .BorderBackgroundColor(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f))
+                            .HAlign(HAlign_Center)
+                            .VAlign(VAlign_Center)
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(FString::Printf(TEXT("镜头 %d"), i + 1)))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                    ]
+                ]
+            ];
     }
 }
 
-FReply UViewpointControlWidget::OnPrevClicked()
+FReply UViewpointControlWidget::OnThumbnailClicked(int32 Index)
 {
-    if (ViewpointCount > 0)
+    if (Index >= 0 && Index < ViewpointCount)
     {
-        CurrentViewpoint = (CurrentViewpoint - 1 + ViewpointCount) % ViewpointCount;
-        UpdateDisplay();
-        OnViewpointChanged.Broadcast(CurrentViewpoint);
-    }
-    return FReply::Handled();
-}
-
-FReply UViewpointControlWidget::OnNextClicked()
-{
-    if (ViewpointCount > 0)
-    {
-        CurrentViewpoint = (CurrentViewpoint + 1) % ViewpointCount;
-        UpdateDisplay();
-        OnViewpointChanged.Broadcast(CurrentViewpoint);
+        CurrentViewpoint = Index;
+        RebuildThumbnails();
+        OnViewpointChanged.Broadcast(Index);
     }
     return FReply::Handled();
 }

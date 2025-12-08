@@ -26,11 +26,10 @@ protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
 
 private:
-    TSharedPtr<class STextBlock> ViewpointText;
+    TSharedPtr<class SHorizontalBox> ThumbnailContainer;
     int32 ViewpointCount = 0;
     int32 CurrentViewpoint = 0;
 
-    void UpdateDisplay();
-    FReply OnPrevClicked();
-    FReply OnNextClicked();
+    void RebuildThumbnails();
+    FReply OnThumbnailClicked(int32 Index);
 };
