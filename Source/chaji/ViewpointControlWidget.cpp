@@ -20,7 +20,7 @@ TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
             [
                 SNew(SButton)
                 .ButtonColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f))
-                .OnClicked_Raw(this, &UViewpointControlWidget::OnPrevClicked)
+                .OnClicked_Lambda([this]() { return OnPrevClicked(); })
                 .ContentPadding(FMargin(15.0f, 8.0f))
                 [
                     SNew(STextBlock)
@@ -47,7 +47,7 @@ TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
             [
                 SNew(SButton)
                 .ButtonColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f))
-                .OnClicked_Raw(this, &UViewpointControlWidget::OnNextClicked)
+                .OnClicked_Lambda([this]() { return OnNextClicked(); })
                 .ContentPadding(FMargin(15.0f, 8.0f))
                 [
                     SNew(STextBlock)
