@@ -6,11 +6,13 @@
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Styling/CoreStyle.h"
-#include "CineCameraActor.h"
-#include "CineCameraComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
-#include "HighResScreenshot.h"
+#include "Kismet/GameplayStatics.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/GameViewportClient.h"
+#include "ImageUtils.h"
 #include "Misc/FileHelper.h"
+#include "HAL/PlatformFilemanager.h"
 
 TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
 {
@@ -208,20 +210,9 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
         ];
 }
 
-void UPhotoCaptureWidget::SetCameraActor(ACineCameraActor* InCamera)
+void UPhotoCaptureWidget::Initialize()
 {
-    CameraActor = InCamera;
-    if (CameraActor)
-    {
-        UCineCameraComponent* CineComp = CameraActor->GetCineCameraComponent();
-        if (CineComp)
-        {
-            FocalLength = CineComp->CurrentFocalLength;
-            Aperture = CineComp->CurrentAperture;
-            FocusDistance = CineComp->FocusSettings.ManualFocusDistance;
-            UpdateParameterDisplay();
-        }
-    }
+    UpdateParameterDisplay();
 }
 
 void UPhotoCaptureWidget::UpdateParameterDisplay()
@@ -240,17 +231,16 @@ void UPhotoCaptureWidget::UpdateParameterDisplay()
     }
 }
 
-void UPhotoCaptureWidget::ApplyCameraSettings()
+void UPhotoCaptureWidget::ApplyToPlayerCamera()
 {
-    if (CameraActor)
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (PC && PC->PlayerCameraManager)
     {
-        UCineCameraComponent* CineComp = CameraActor->GetCineCameraComponent();
-        if (CineComp)
-        {
-            CineComp->CurrentFocalLength = FocalLength;
-            CineComp->CurrentAperture = Aperture;
-            CineComp->FocusSettings.ManualFocusDistance = FocusDistance;
-        }
+        // Apply FOV based on focal length (approximate conversion)
+        // FOV = 2 * atan(SensorWidth / (2 * FocalLength))
+        // Using 36mm full frame sensor width
+        float FOV = 2.0f * FMath::RadiansToDegrees(FMath::Atan(18.0f / FocalLength));
+        PC->PlayerCameraManager->SetFOV(FOV);
     }
 }
 
@@ -266,15 +256,30 @@ FReply UPhotoCaptureWidget::OnToggleClicked()
 
 FReply UPhotoCaptureWidget::OnCaptureClicked()
 {
-    // Take high resolution screenshot
-    FString Filename = FString::Printf(TEXT("Screenshot_%s"), *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
-    FScreenshotRequest::RequestScreenshot(Filename, true, false);
+    // Get screenshot directory
+    FString ScreenshotDir = FPaths::ProjectSavedDir() / TEXT("Screenshots");
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    PlatformFile.CreateDirectoryTree(*ScreenshotDir);
     
-    // Set resolution multiplier for high-res capture
-    GetHighResScreenshotConfig().ResolutionMultiplier = ScreenshotScale;
-    GetHighResScreenshotConfig().bMaskEnabled = false;
+    // Generate filename with timestamp
+    FString Filename = FString::Printf(TEXT("Photo_%s.png"), *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
+    FString FullPath = ScreenshotDir / Filename;
     
-    UE_LOG(LogTemp, Log, TEXT("Screenshot captured: %s"), *Filename);
+    // Take screenshot using console command for high resolution
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (PC)
+    {
+        FString Command = FString::Printf(TEXT("HighResShot %dx filename=\"%s\""), ScreenshotScale, *FullPath);
+        PC->ConsoleCommand(Command);
+        
+        // Update status
+        if (StatusText.IsValid())
+        {
+            StatusText->SetText(FText::FromString(FString::Printf(TEXT("已保存: %s"), *Filename)));
+        }
+        
+        UE_LOG(LogTemp, Log, TEXT("Screenshot saved to: %s"), *FullPath);
+    }
     
     return FReply::Handled();
 }
@@ -283,24 +288,19 @@ void UPhotoCaptureWidget::OnFocalLengthChanged(float Value)
 {
     FocalLength = 10.0f + Value * 190.0f; // 10mm to 200mm
     UpdateParameterDisplay();
-    ApplyCameraSettings();
+    ApplyToPlayerCamera();
 }
 
 void UPhotoCaptureWidget::OnApertureChanged(float Value)
 {
     Aperture = 1.2f + Value * 20.8f; // f/1.2 to f/22
     UpdateParameterDisplay();
-    ApplyCameraSettings();
+    // Aperture affects DOF, which requires post-process settings
 }
 
 void UPhotoCaptureWidget::OnFocusDistanceChanged(float Value)
 {
     FocusDistance = Value * 10000.0f; // 0 to 10000
     UpdateParameterDisplay();
-    ApplyCameraSettings();
-}
-
-void UPhotoCaptureWidget::RebuildSettings()
-{
-    // Placeholder for future settings rebuild
+    // Focus distance affects DOF focus plane
 }

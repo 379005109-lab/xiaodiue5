@@ -12,20 +12,17 @@ class UPhotoCaptureWidget : public UUserWidget
 
 public:
     UFUNCTION(BlueprintCallable)
-    void SetCameraActor(class ACineCameraActor* InCamera);
+    void Initialize();
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
 
 private:
-    TSharedPtr<class SVerticalBox> SettingsContainer;
     TSharedPtr<class SBox> ContentBox;
     TSharedPtr<class STextBlock> FocalLengthText;
     TSharedPtr<class STextBlock> ApertureText;
     TSharedPtr<class STextBlock> FocusDistanceText;
-    
-    UPROPERTY()
-    class ACineCameraActor* CameraActor;
+    TSharedPtr<class STextBlock> StatusText;
     
     bool bIsExpanded = false;
     
@@ -33,11 +30,10 @@ private:
     float FocalLength = 35.0f;
     float Aperture = 2.8f;
     float FocusDistance = 1000.0f;
-    int32 ScreenshotScale = 2;
+    int32 ScreenshotScale = 4;
     
-    void RebuildSettings();
     void UpdateParameterDisplay();
-    void ApplyCameraSettings();
+    void ApplyToPlayerCamera();
     
     FReply OnToggleClicked();
     FReply OnCaptureClicked();

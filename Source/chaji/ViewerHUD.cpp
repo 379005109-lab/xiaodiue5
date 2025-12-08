@@ -58,13 +58,14 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create the viewpoint control widget (bottom-left)
+    // Create the viewpoint control widget (bottom-left, at very bottom of screen)
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(9);
-        // Position at bottom-left corner (use screen coordinates)
-        ViewpointControl->SetPositionInViewport(FVector2D(20.0f, 620.0f));
+        // Position at bottom of screen
+        ViewpointControl->SetAnchorsInViewport(FAnchors(0.0f, 1.0f, 0.0f, 1.0f));
+        ViewpointControl->SetPositionInViewport(FVector2D(20.0f, -100.0f));
         
         // Bind viewpoint change event
         ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
@@ -81,7 +82,10 @@ void AViewerHUD::SetupUI()
     if (PhotoCapture)
     {
         PhotoCapture->AddToViewport(8);
-        PhotoCapture->SetPositionInViewport(FVector2D(850.0f, 30.0f));
+        // Anchor to top-right
+        PhotoCapture->SetAnchorsInViewport(FAnchors(1.0f, 0.0f, 1.0f, 0.0f));
+        PhotoCapture->SetPositionInViewport(FVector2D(-200.0f, 30.0f));
+        PhotoCapture->Initialize();
     }
     
     // Set input mode to allow UI interaction while keeping game input

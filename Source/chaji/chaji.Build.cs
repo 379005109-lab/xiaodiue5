@@ -13,8 +13,7 @@ public class chaji : ModuleRules
             "CoreUObject", 
             "Engine", 
             "InputCore",
-            "UMG",
-            "CinematicCamera"
+            "UMG"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { 
