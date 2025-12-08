@@ -41,5 +41,5 @@ private:
     bool bIsVisible = false;
 
     void CreateViewpointButtons();
-    FReply OnViewpointClicked(int32 Index);
+    FReply HandleViewpointClick(int32 Index);
 };

@@ -72,7 +72,7 @@ void UViewpointListWidget::CreateViewpointButtons()
             [
                 SNew(SButton)
                 .ButtonColorAndOpacity(ButtonColor)
-                .OnClicked(FOnClicked::CreateUObject(this, &UViewpointListWidget::OnViewpointClicked, ButtonIndex))
+                .OnClicked_Raw(this, &UViewpointListWidget::HandleViewpointClick, ButtonIndex)
                 .ContentPadding(FMargin(15.0f, 8.0f))
                 [
                     SNew(STextBlock)
@@ -85,7 +85,7 @@ void UViewpointListWidget::CreateViewpointButtons()
     }
 }
 
-FReply UViewpointListWidget::OnViewpointClicked(int32 Index)
+FReply UViewpointListWidget::HandleViewpointClick(int32 Index)
 {
     SelectedIndex = Index;
     CreateViewpointButtons();
