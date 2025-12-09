@@ -124,6 +124,13 @@ void AViewerHUD::SetupUI()
         float PosY = ViewportSize.Y * 0.03f;
         PhotoCapture->SetPositionInViewport(FVector2D(PosX, PosY));
         PhotoCapture->InitWidget();
+        
+        // Set reference to pawn for shortcuts
+        AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
+        if (ViewerPawn)
+        {
+            ViewerPawn->PhotoCaptureRef = PhotoCapture;
+        }
     }
     
     // Set input mode to allow UI interaction while keeping game input

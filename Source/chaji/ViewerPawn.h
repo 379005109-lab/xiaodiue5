@@ -6,6 +6,8 @@
 #include "Camera/CameraComponent.h"
 #include "ViewerPawn.generated.h"
 
+class UPhotoCaptureWidget;
+
 UCLASS()
 class AViewerPawn : public ADefaultPawn
 {
@@ -18,6 +20,12 @@ public:
     UCameraComponent* CameraComp;
     
     virtual void Tick(float DeltaTime) override;
+    
+    // Reference to photo capture widget for shortcuts
+    UPROPERTY()
+    UPhotoCaptureWidget* PhotoCaptureRef;
+    
+    bool bRightMouseDown = false;
 
 protected:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -37,4 +45,9 @@ private:
     void StopMoveUp();
     void StartMoveDown();
     void StopMoveDown();
+    
+    void OnRightMousePressed();
+    void OnRightMouseReleased();
+    void OnMouseScrollUp();
+    void OnMouseScrollDown();
 };

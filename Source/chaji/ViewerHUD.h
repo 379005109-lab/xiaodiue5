@@ -9,6 +9,7 @@
 #include "CameraViewController.h"
 #include "ViewpointPreviewManager.h"
 #include "ViewerPlayerController.h"
+#include "ViewerPawn.h"
 #include "ViewerHUD.generated.h"
 
 UCLASS()

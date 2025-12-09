@@ -3,6 +3,8 @@
 #include "Components/InputComponent.h"
 #include "GameFramework/PlayerInput.h"
 #include "GameFramework/FloatingPawnMovement.h"
+#include "PhotoCaptureWidget.h"
+#include "GameFramework/PlayerController.h"
 
 AViewerPawn::AViewerPawn()
 {
@@ -44,7 +46,7 @@ void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 {
     check(PlayerInputComponent);
     
-    // Bind movement directly to keys - no axis mapping needed
+    // Bind movement directly to keys
     PlayerInputComponent->BindKey(EKeys::W, IE_Pressed, this, &AViewerPawn::StartMoveForward);
     PlayerInputComponent->BindKey(EKeys::W, IE_Released, this, &AViewerPawn::StopMoveForward);
     PlayerInputComponent->BindKey(EKeys::S, IE_Pressed, this, &AViewerPawn::StartMoveBackward);
@@ -60,14 +62,30 @@ void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     PlayerInputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AViewerPawn::StartMoveUp);
     PlayerInputComponent->BindKey(EKeys::SpaceBar, IE_Released, this, &AViewerPawn::StopMoveUp);
     
-    // Mouse look - bind axes
-    PlayerInputComponent->BindAxis("Turn", this, &AViewerPawn::AddControllerYawInput);
-    PlayerInputComponent->BindAxis("LookUp", this, &AViewerPawn::AddControllerPitchInput);
+    // Right mouse for look
+    PlayerInputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AViewerPawn::OnRightMousePressed);
+    PlayerInputComponent->BindKey(EKeys::RightMouseButton, IE_Released, this, &AViewerPawn::OnRightMouseReleased);
+    
+    // Mouse scroll for camera shortcuts
+    PlayerInputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AViewerPawn::OnMouseScrollUp);
+    PlayerInputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AViewerPawn::OnMouseScrollDown);
 }
 
 void AViewerPawn::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC) return;
+    
+    // Mouse look only when right button held
+    if (bRightMouseDown)
+    {
+        float MouseX, MouseY;
+        PC->GetInputMouseDelta(MouseX, MouseY);
+        AddControllerYawInput(MouseX * 0.5f);
+        AddControllerPitchInput(MouseY * -0.5f);
+    }
     
     // Apply movement input
     FVector MoveDirection = FVector(MoveInput.X, MoveInput.Y, MoveInput.Z);
@@ -88,14 +106,74 @@ void AViewerPawn::Tick(float DeltaTime)
 }
 
 void AViewerPawn::StartMoveForward() { MoveInput.X = 1.0f; }
-void AViewerPawn::StopMoveForward() { MoveInput.X = FMath::Max(MoveInput.X, 0.0f) == 1.0f ? 0.0f : MoveInput.X; }
+void AViewerPawn::StopMoveForward() { if (MoveInput.X > 0) MoveInput.X = 0.0f; }
 void AViewerPawn::StartMoveBackward() { MoveInput.X = -1.0f; }
-void AViewerPawn::StopMoveBackward() { MoveInput.X = FMath::Min(MoveInput.X, 0.0f) == -1.0f ? 0.0f : MoveInput.X; }
+void AViewerPawn::StopMoveBackward() { if (MoveInput.X < 0) MoveInput.X = 0.0f; }
 void AViewerPawn::StartMoveLeft() { MoveInput.Y = -1.0f; }
-void AViewerPawn::StopMoveLeft() { MoveInput.Y = FMath::Min(MoveInput.Y, 0.0f) == -1.0f ? 0.0f : MoveInput.Y; }
+void AViewerPawn::StopMoveLeft() { if (MoveInput.Y < 0) MoveInput.Y = 0.0f; }
 void AViewerPawn::StartMoveRight() { MoveInput.Y = 1.0f; }
-void AViewerPawn::StopMoveRight() { MoveInput.Y = FMath::Max(MoveInput.Y, 0.0f) == 1.0f ? 0.0f : MoveInput.Y; }
+void AViewerPawn::StopMoveRight() { if (MoveInput.Y > 0) MoveInput.Y = 0.0f; }
 void AViewerPawn::StartMoveUp() { MoveInput.Z = 1.0f; }
-void AViewerPawn::StopMoveUp() { MoveInput.Z = FMath::Max(MoveInput.Z, 0.0f) == 1.0f ? 0.0f : MoveInput.Z; }
+void AViewerPawn::StopMoveUp() { if (MoveInput.Z > 0) MoveInput.Z = 0.0f; }
 void AViewerPawn::StartMoveDown() { MoveInput.Z = -1.0f; }
-void AViewerPawn::StopMoveDown() { MoveInput.Z = FMath::Min(MoveInput.Z, 0.0f) == -1.0f ? 0.0f : MoveInput.Z; }
+void AViewerPawn::StopMoveDown() { if (MoveInput.Z < 0) MoveInput.Z = 0.0f; }
+
+void AViewerPawn::OnRightMousePressed()
+{
+    bRightMouseDown = true;
+}
+
+void AViewerPawn::OnRightMouseReleased()
+{
+    bRightMouseDown = false;
+}
+
+void AViewerPawn::OnMouseScrollUp()
+{
+    if (!PhotoCaptureRef) return;
+    
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC) return;
+    
+    bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
+    bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
+    bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
+    
+    if (bCtrl)
+    {
+        PhotoCaptureRef->AdjustFocalLength(5.0f);
+    }
+    else if (bShift)
+    {
+        PhotoCaptureRef->AdjustAperture(0.5f);
+    }
+    else if (bAlt)
+    {
+        PhotoCaptureRef->AdjustFocusDistance(100.0f);
+    }
+}
+
+void AViewerPawn::OnMouseScrollDown()
+{
+    if (!PhotoCaptureRef) return;
+    
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC) return;
+    
+    bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
+    bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
+    bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
+    
+    if (bCtrl)
+    {
+        PhotoCaptureRef->AdjustFocalLength(-5.0f);
+    }
+    else if (bShift)
+    {
+        PhotoCaptureRef->AdjustAperture(-0.5f);
+    }
+    else if (bAlt)
+    {
+        PhotoCaptureRef->AdjustFocusDistance(-100.0f);
+    }
+}
