@@ -159,6 +159,24 @@ void AViewerHUD::SetupUI()
         ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
     }
     
+    // Create video control widget (bottom-left, below viewpoint control)
+    VideoControl = CreateWidget<UVideoControlWidget>(PC, UVideoControlWidget::StaticClass());
+    if (VideoControl)
+    {
+        VideoControl->AddToViewport(9);
+        float PosX = ViewportSize.X * 0.02f;
+        float PosY = ViewportSize.Y * 0.70f;
+        VideoControl->SetPositionInViewport(FVector2D(PosX, PosY));
+        VideoControl->InitWidget();
+        
+        // Bind events
+        VideoControl->OnClipSelected.AddDynamic(this, &AViewerHUD::OnVideoClipSelected);
+        VideoControl->OnPlayAllClips.AddDynamic(this, &AViewerHUD::OnPlayAllClips);
+        VideoControl->OnConfirmStartFrame.AddDynamic(this, &AViewerHUD::OnSetVideoStartFrame);
+        VideoControl->OnConfirmEndFrame.AddDynamic(this, &AViewerHUD::OnSetVideoEndFrame);
+        VideoControl->OnPlaySingleClip.AddDynamic(this, &AViewerHUD::OnPlaySingleClip);
+    }
+    
     // Set input mode to allow UI interaction while keeping game input
     FInputModeGameAndUI InputMode;
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -275,6 +293,7 @@ void AViewerHUD::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     HandleGlobalInput();
+    UpdateVideoPlayback(DeltaTime);
 }
 
 void AViewerHUD::HandleGlobalInput()
@@ -399,4 +418,207 @@ void AViewerHUD::PerformBatchCapture(const TArray<int32>& Indices, int32 Current
     
     // Wait for camera to move before capturing
     GetWorld()->GetTimerManager().SetTimer(BatchCaptureTimerHandle, CaptureDelegate, 0.3f, false);
+}
+
+void AViewerHUD::OnVideoClipSelected(int32 ClipIndex)
+{
+    // Preview the clip's start frame if available
+    if (VideoControl)
+    {
+        FVideoClipData ClipData = VideoControl->GetClipData(ClipIndex);
+        if (ClipData.bStartSet)
+        {
+            APlayerController* PC = GetOwningPlayerController();
+            if (PC && PC->GetPawn())
+            {
+                PC->GetPawn()->SetActorLocation(ClipData.StartFrame.Location);
+                PC->SetControlRotation(ClipData.StartFrame.Rotation);
+                
+                // Apply camera settings
+                if (PhotoCapture)
+                {
+                    PhotoCapture->LoadCameraSettings(
+                        ClipData.StartFrame.FocalLength,
+                        ClipData.StartFrame.Aperture,
+                        ClipData.StartFrame.FocusDistance
+                    );
+                }
+            }
+        }
+    }
+}
+
+void AViewerHUD::OnPlayAllClips()
+{
+    if (!VideoControl) return;
+    
+    // Build list of clips to play
+    ClipsToPlay.Empty();
+    for (int32 i = 0; i < VideoControl->GetClipCount(); i++)
+    {
+        FVideoClipData Clip = VideoControl->GetClipData(i);
+        if (Clip.bStartSet && Clip.bEndSet)
+        {
+            ClipsToPlay.Add(i);
+        }
+    }
+    
+    if (ClipsToPlay.Num() > 0)
+    {
+        CurrentClipInSequence = 0;
+        PlayVideoClip(ClipsToPlay[0]);
+    }
+}
+
+void AViewerHUD::OnSetVideoStartFrame()
+{
+    if (!VideoControl) return;
+    
+    APlayerController* PC = GetOwningPlayerController();
+    if (!PC || !PC->GetPawn()) return;
+    
+    FVideoFrameData Frame;
+    Frame.Location = PC->GetPawn()->GetActorLocation();
+    Frame.Rotation = PC->GetControlRotation();
+    
+    if (PhotoCapture)
+    {
+        Frame.FocalLength = PhotoCapture->GetFocalLength();
+        Frame.Aperture = PhotoCapture->GetAperture();
+        Frame.FocusDistance = PhotoCapture->GetFocusDistance();
+    }
+    Frame.bHasData = true;
+    
+    VideoControl->SetStartFrame(Frame);
+}
+
+void AViewerHUD::OnSetVideoEndFrame()
+{
+    if (!VideoControl) return;
+    
+    APlayerController* PC = GetOwningPlayerController();
+    if (!PC || !PC->GetPawn()) return;
+    
+    FVideoFrameData Frame;
+    Frame.Location = PC->GetPawn()->GetActorLocation();
+    Frame.Rotation = PC->GetControlRotation();
+    
+    if (PhotoCapture)
+    {
+        Frame.FocalLength = PhotoCapture->GetFocalLength();
+        Frame.Aperture = PhotoCapture->GetAperture();
+        Frame.FocusDistance = PhotoCapture->GetFocusDistance();
+    }
+    Frame.bHasData = true;
+    
+    VideoControl->SetEndFrame(Frame);
+}
+
+void AViewerHUD::OnPlaySingleClip(int32 ClipIndex)
+{
+    ClipsToPlay.Empty(); // Clear sequence
+    PlayVideoClip(ClipIndex);
+}
+
+void AViewerHUD::PlayVideoClip(int32 ClipIndex)
+{
+    if (!VideoControl) return;
+    
+    FVideoClipData ClipData = VideoControl->GetClipData(ClipIndex);
+    if (!ClipData.bStartSet || !ClipData.bEndSet)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Clip %d is not fully set"), ClipIndex);
+        return;
+    }
+    
+    // Start playback
+    bIsPlayingVideo = true;
+    CurrentPlayingClipIndex = ClipIndex;
+    VideoPlaybackTime = 0.0f;
+    VideoPlaybackDuration = ClipData.Duration;
+    VideoStartFrame = ClipData.StartFrame;
+    VideoEndFrame = ClipData.EndFrame;
+    
+    // Move to start position
+    APlayerController* PC = GetOwningPlayerController();
+    if (PC && PC->GetPawn())
+    {
+        PC->GetPawn()->SetActorLocation(VideoStartFrame.Location);
+        PC->SetControlRotation(VideoStartFrame.Rotation);
+        
+        if (PhotoCapture)
+        {
+            PhotoCapture->LoadCameraSettings(
+                VideoStartFrame.FocalLength,
+                VideoStartFrame.Aperture,
+                VideoStartFrame.FocusDistance
+            );
+        }
+    }
+    
+    UE_LOG(LogTemp, Log, TEXT("Playing clip %d for %.1f seconds"), ClipIndex, VideoPlaybackDuration);
+}
+
+void AViewerHUD::UpdateVideoPlayback(float DeltaTime)
+{
+    if (!bIsPlayingVideo) return;
+    
+    VideoPlaybackTime += DeltaTime;
+    float Alpha = FMath::Clamp(VideoPlaybackTime / VideoPlaybackDuration, 0.0f, 1.0f);
+    
+    // Smooth interpolation using ease in/out
+    float SmoothAlpha = FMath::InterpEaseInOut(0.0f, 1.0f, Alpha, 2.0f);
+    
+    // Interpolate position
+    FVector NewLocation = FMath::Lerp(VideoStartFrame.Location, VideoEndFrame.Location, SmoothAlpha);
+    
+    // Interpolate rotation
+    FRotator NewRotation = FMath::Lerp(VideoStartFrame.Rotation, VideoEndFrame.Rotation, SmoothAlpha);
+    
+    // Interpolate camera parameters
+    float NewFocal = FMath::Lerp(VideoStartFrame.FocalLength, VideoEndFrame.FocalLength, SmoothAlpha);
+    float NewAperture = FMath::Lerp(VideoStartFrame.Aperture, VideoEndFrame.Aperture, SmoothAlpha);
+    float NewFocus = FMath::Lerp(VideoStartFrame.FocusDistance, VideoEndFrame.FocusDistance, SmoothAlpha);
+    
+    // Apply
+    APlayerController* PC = GetOwningPlayerController();
+    if (PC && PC->GetPawn())
+    {
+        PC->GetPawn()->SetActorLocation(NewLocation);
+        PC->SetControlRotation(NewRotation);
+        
+        if (PhotoCapture)
+        {
+            PhotoCapture->LoadCameraSettings(NewFocal, NewAperture, NewFocus);
+        }
+    }
+    
+    // Check if clip finished
+    if (Alpha >= 1.0f)
+    {
+        bIsPlayingVideo = false;
+        UE_LOG(LogTemp, Log, TEXT("Clip %d playback finished"), CurrentPlayingClipIndex);
+        
+        // Play next clip in sequence if available
+        if (ClipsToPlay.Num() > 0)
+        {
+            CurrentClipInSequence++;
+            if (CurrentClipInSequence < ClipsToPlay.Num())
+            {
+                // Small delay before next clip
+                FTimerDelegate NextClipDelegate;
+                NextClipDelegate.BindLambda([this]()
+                {
+                    PlayVideoClip(ClipsToPlay[CurrentClipInSequence]);
+                });
+                FTimerHandle NextClipTimerHandle;
+                GetWorld()->GetTimerManager().SetTimer(NextClipTimerHandle, NextClipDelegate, 0.2f, false);
+            }
+            else
+            {
+                ClipsToPlay.Empty();
+                UE_LOG(LogTemp, Log, TEXT("All clips playback finished"));
+            }
+        }
+    }
 }

@@ -11,6 +11,8 @@
 #include "ViewerPlayerController.h"
 #include "ViewerPawn.h"
 #include "ParameterDisplayWidget.h"
+#include "VideoControlWidget.h"
+#include "VideoClipData.h"
 #include "ViewerHUD.generated.h"
 
 UCLASS()
@@ -41,6 +43,9 @@ private:
     
     UPROPERTY()
     UParameterDisplayWidget* ParameterDisplay;
+    
+    UPROPERTY()
+    UVideoControlWidget* VideoControl;
     
     UPROPERTY()
     ACameraViewController* CameraController;
@@ -76,4 +81,33 @@ private:
     TArray<int32> BatchCaptureIndices;
     int32 BatchCaptureCurrentIndex = 0;
     FTimerHandle BatchCaptureTimerHandle;
+    
+    // Video playback
+    UFUNCTION()
+    void OnVideoClipSelected(int32 ClipIndex);
+    
+    UFUNCTION()
+    void OnPlayAllClips();
+    
+    UFUNCTION()
+    void OnSetVideoStartFrame();
+    
+    UFUNCTION()
+    void OnSetVideoEndFrame();
+    
+    UFUNCTION()
+    void OnPlaySingleClip(int32 ClipIndex);
+    
+    void PlayVideoClip(int32 ClipIndex);
+    void UpdateVideoPlayback(float DeltaTime);
+    
+    // Video animation state
+    bool bIsPlayingVideo = false;
+    int32 CurrentPlayingClipIndex = 0;
+    float VideoPlaybackTime = 0.0f;
+    float VideoPlaybackDuration = 0.0f;
+    FVideoFrameData VideoStartFrame;
+    FVideoFrameData VideoEndFrame;
+    TArray<int32> ClipsToPlay;
+    int32 CurrentClipInSequence = 0;
 };
