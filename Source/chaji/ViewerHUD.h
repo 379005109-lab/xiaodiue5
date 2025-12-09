@@ -45,11 +45,6 @@ private:
     void SetupUI();
     void HandleGlobalInput();
     void SetupPreviewsForCategory(int32 CategoryIndex);
-    
-    // Shortcut key hold tracking
-    float KeyHoldTime = 0.0f;
-    float KeyHoldAcceleration = 1.0f;
-    bool bWasHoldingKey = false;
 
     UFUNCTION()
     void OnCategorySelected(int32 Index);

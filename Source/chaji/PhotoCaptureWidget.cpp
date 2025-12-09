@@ -249,12 +249,13 @@ void UPhotoCaptureWidget::ApplyAllCameraSettings()
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (!PC || !PC->PlayerCameraManager) return;
     
-    // Apply FOV based on focal length
+    // Apply FOV based on focal length (full frame 36mm sensor)
     float FOV = 2.0f * FMath::RadiansToDegrees(FMath::Atan(18.0f / FocalLength));
     PC->PlayerCameraManager->SetFOV(FOV);
     
-    // Apply DOF via console commands
+    // Enable high quality DOF
     PC->ConsoleCommand(TEXT("r.DepthOfFieldQuality 4"));
+    PC->ConsoleCommand(TEXT("r.DOF.Gather.RingCount 5"));
     
     // Apply DOF settings to camera component on pawn
     if (APawn* Pawn = PC->GetPawn())
@@ -262,17 +263,32 @@ void UPhotoCaptureWidget::ApplyAllCameraSettings()
         UCameraComponent* CamComp = Pawn->FindComponentByClass<UCameraComponent>();
         if (CamComp)
         {
+            // Enable DOF
             CamComp->PostProcessSettings.bOverride_DepthOfFieldFstop = true;
             CamComp->PostProcessSettings.DepthOfFieldFstop = Aperture;
+            
             CamComp->PostProcessSettings.bOverride_DepthOfFieldFocalDistance = true;
             CamComp->PostProcessSettings.DepthOfFieldFocalDistance = FocusDistance;
+            
             CamComp->PostProcessSettings.bOverride_DepthOfFieldSensorWidth = true;
             CamComp->PostProcessSettings.DepthOfFieldSensorWidth = 36.0f;
+            
             CamComp->PostProcessSettings.bOverride_DepthOfFieldMinFstop = true;
             CamComp->PostProcessSettings.DepthOfFieldMinFstop = 1.2f;
+            
             CamComp->PostProcessSettings.bOverride_DepthOfFieldBladeCount = true;
             CamComp->PostProcessSettings.DepthOfFieldBladeCount = 7;
+            
+            // Enable camera post process
             CamComp->PostProcessBlendWeight = 1.0f;
+            
+            // Log for debugging
+            UE_LOG(LogTemp, Log, TEXT("DOF Applied: Aperture=%.1f, FocusDistance=%.0f, FOV=%.1f"), 
+                Aperture, FocusDistance, FOV);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No CameraComponent found on Pawn"));
         }
     }
 }

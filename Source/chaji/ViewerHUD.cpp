@@ -26,12 +26,13 @@ void AViewerHUD::BeginPlay()
         // Auto-create CameraViewController if not found
         FActorSpawnParameters SpawnParams;
         CameraController = GetWorld()->SpawnActor<ACameraViewController>(ACameraViewController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-        
-        if (CameraController)
-        {
-            // Auto-configure from CineCameraActors
-            CameraController->AutoConfigureFromCineCameras();
-        }
+    }
+    
+    // Always auto-configure from CineCameras
+    if (CameraController)
+    {
+        CameraController->AutoConfigureFromCineCameras();
+        UE_LOG(LogTemp, Log, TEXT("CameraController configured with %d categories"), CameraController->Categories.Num());
     }
     
     // Create PreviewManager for viewpoint previews
@@ -44,6 +45,13 @@ void AViewerHUD::BeginPlay()
     if (CameraController && CameraController->Categories.Num() > 0)
     {
         SetupPreviewsForCategory(0);
+        
+        // Load initial camera settings
+        if (PhotoCapture)
+        {
+            FCameraSettings Settings = CameraController->GetCurrentCameraSettings();
+            PhotoCapture->LoadCameraSettings(Settings.FocalLength, Settings.Aperture, Settings.FocusDistance);
+        }
     }
 }
 
@@ -184,53 +192,45 @@ void AViewerHUD::HandleGlobalInput()
     APlayerController* PC = GetOwningPlayerController();
     if (!PC) return;
     
-    float DeltaTime = GetWorld()->GetDeltaSeconds();
-    
     // Check modifier keys
     bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
     bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
     bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
     
-    // Check if Q or E is held
-    bool bQHeld = PC->IsInputKeyDown(EKeys::Q);
-    bool bEHeld = PC->IsInputKeyDown(EKeys::E);
-    bool bHoldingKey = (bCtrl || bShift || bAlt) && (bQHeld || bEHeld);
+    // Get mouse wheel input
+    float ScrollDelta = PC->GetInputAxisValue(TEXT("LookUp")); // Mouse wheel maps to this
     
-    if (bHoldingKey)
+    // Also check for direct mouse wheel
+    if (FMath::Abs(ScrollDelta) < 0.01f)
     {
-        // Increase hold time and acceleration
-        KeyHoldTime += DeltaTime;
-        KeyHoldAcceleration = FMath::Min(KeyHoldAcceleration + DeltaTime * 2.0f, 10.0f);
-        
-        // Calculate adjustment amount with acceleration
-        float Direction = bEHeld ? 1.0f : -1.0f;
-        
+        // Try alternate method - check mouse wheel keys
+        if (PC->IsInputKeyDown(EKeys::MouseScrollUp))
+        {
+            ScrollDelta = 1.0f;
+        }
+        else if (PC->IsInputKeyDown(EKeys::MouseScrollDown))
+        {
+            ScrollDelta = -1.0f;
+        }
+    }
+    
+    // Only process if a modifier is held and there's scroll input
+    if ((bCtrl || bShift || bAlt) && FMath::Abs(ScrollDelta) > 0.01f)
+    {
         if (bCtrl)
         {
-            // Focal length: 5mm per tick, accelerating
-            PhotoCapture->AdjustFocalLength(Direction * 5.0f * KeyHoldAcceleration * DeltaTime * 10.0f);
+            // Ctrl + Scroll = Focal Length
+            PhotoCapture->AdjustFocalLength(ScrollDelta * 5.0f);
         }
         else if (bShift)
         {
-            // Aperture: 0.5 per tick, accelerating
-            PhotoCapture->AdjustAperture(Direction * 0.5f * KeyHoldAcceleration * DeltaTime * 10.0f);
+            // Shift + Scroll = Aperture  
+            PhotoCapture->AdjustAperture(ScrollDelta * 0.5f);
         }
         else if (bAlt)
         {
-            // Focus distance: 100cm per tick, accelerating
-            PhotoCapture->AdjustFocusDistance(Direction * 100.0f * KeyHoldAcceleration * DeltaTime * 10.0f);
-        }
-        
-        bWasHoldingKey = true;
-    }
-    else
-    {
-        // Reset acceleration when key released
-        if (bWasHoldingKey)
-        {
-            KeyHoldTime = 0.0f;
-            KeyHoldAcceleration = 1.0f;
-            bWasHoldingKey = false;
+            // Alt + Scroll = Focus Distance
+            PhotoCapture->AdjustFocusDistance(ScrollDelta * 100.0f);
         }
     }
 }
