@@ -159,23 +159,25 @@ void AViewerHUD::SetupUI()
         ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
     }
     
-    // Create video control widget (bottom-left, above viewpoint control)
-    VideoControl = CreateWidget<UVideoControlWidget>(PC, UVideoControlWidget::StaticClass());
-    if (VideoControl)
+    // Create media control widget (bottom-left)
+    MediaControl = CreateWidget<UMediaControlWidget>(PC, UMediaControlWidget::StaticClass());
+    if (MediaControl)
     {
-        VideoControl->AddToViewport(9);
+        MediaControl->AddToViewport(10);
         float PosX = ViewportSize.X * 0.02f;
-        float PosY = ViewportSize.Y * 0.72f; // Above viewpoint control
-        VideoControl->SetPositionInViewport(FVector2D(PosX, PosY));
-        VideoControl->InitWidget();
+        float PosY = ViewportSize.Y * 0.70f;
+        MediaControl->SetPositionInViewport(FVector2D(PosX, PosY));
+        MediaControl->InitWidget();
         
         // Bind events
-        VideoControl->OnClipSelected.AddDynamic(this, &AViewerHUD::OnVideoClipSelected);
-        VideoControl->OnPlayAllClips.AddDynamic(this, &AViewerHUD::OnPlayAllClips);
-        VideoControl->OnConfirmStartFrame.AddDynamic(this, &AViewerHUD::OnSetVideoStartFrame);
-        VideoControl->OnConfirmEndFrame.AddDynamic(this, &AViewerHUD::OnSetVideoEndFrame);
-        VideoControl->OnPlaySingleClip.AddDynamic(this, &AViewerHUD::OnPlaySingleClip);
-        VideoControl->OnExportVideo.AddDynamic(this, &AViewerHUD::OnExportVideo);
+        MediaControl->OnModeChanged.AddDynamic(this, &AViewerHUD::OnMediaModeChanged);
+        MediaControl->OnPhotoShutter.AddDynamic(this, &AViewerHUD::OnMediaPhotoShutter);
+        MediaControl->OnVideoClipPlay.AddDynamic(this, &AViewerHUD::OnVideoClipPlay);
+        MediaControl->OnVideoPlayAll.AddDynamic(this, &AViewerHUD::OnVideoPlayAll);
+        MediaControl->OnVideoExport.AddDynamic(this, &AViewerHUD::OnVideoExport);
+        MediaControl->OnSetStartFrame.AddDynamic(this, &AViewerHUD::OnSetStartFrame);
+        MediaControl->OnSetEndFrame.AddDynamic(this, &AViewerHUD::OnSetEndFrame);
+        MediaControl->OnTimelineScrub.AddDynamic(this, &AViewerHUD::OnTimelineScrub);
     }
     
     // Set input mode to allow UI interaction while keeping game input
@@ -421,43 +423,33 @@ void AViewerHUD::PerformBatchCapture(const TArray<int32>& Indices, int32 Current
     GetWorld()->GetTimerManager().SetTimer(BatchCaptureTimerHandle, CaptureDelegate, 0.3f, false);
 }
 
-void AViewerHUD::OnVideoClipSelected(int32 ClipIndex)
+void AViewerHUD::OnMediaModeChanged(EMediaMode NewMode)
 {
-    // Preview the clip's start frame if available
-    if (VideoControl)
+    UE_LOG(LogTemp, Log, TEXT("Media mode changed to: %d"), (int32)NewMode);
+}
+
+void AViewerHUD::OnMediaPhotoShutter()
+{
+    if (PhotoCapture)
     {
-        FVideoClipData ClipData = VideoControl->GetClipData(ClipIndex);
-        if (ClipData.bStartSet)
-        {
-            APlayerController* PC = GetOwningPlayerController();
-            if (PC && PC->GetPawn())
-            {
-                PC->GetPawn()->SetActorLocation(ClipData.StartFrame.Location);
-                PC->SetControlRotation(ClipData.StartFrame.Rotation);
-                
-                // Apply camera settings
-                if (PhotoCapture)
-                {
-                    PhotoCapture->LoadCameraSettings(
-                        ClipData.StartFrame.FocalLength,
-                        ClipData.StartFrame.Aperture,
-                        ClipData.StartFrame.FocusDistance
-                    );
-                }
-            }
-        }
+        PhotoCapture->CaptureSingle();
     }
 }
 
-void AViewerHUD::OnPlayAllClips()
+void AViewerHUD::OnVideoClipPlay(int32 ClipIndex)
 {
-    if (!VideoControl) return;
-    
-    // Build list of clips to play
     ClipsToPlay.Empty();
-    for (int32 i = 0; i < VideoControl->GetClipCount(); i++)
+    PlayVideoClip(ClipIndex);
+}
+
+void AViewerHUD::OnVideoPlayAll()
+{
+    if (!MediaControl) return;
+    
+    ClipsToPlay.Empty();
+    for (int32 i = 0; i < MediaControl->GetClipCount(); i++)
     {
-        FVideoClipData Clip = VideoControl->GetClipData(i);
+        FVideoClipData Clip = MediaControl->GetClipData(i);
         if (Clip.bStartSet && Clip.bEndSet)
         {
             ClipsToPlay.Add(i);
@@ -471,9 +463,9 @@ void AViewerHUD::OnPlayAllClips()
     }
 }
 
-void AViewerHUD::OnSetVideoStartFrame()
+void AViewerHUD::OnSetStartFrame()
 {
-    if (!VideoControl) return;
+    if (!MediaControl) return;
     
     APlayerController* PC = GetOwningPlayerController();
     if (!PC || !PC->GetPawn()) return;
@@ -490,12 +482,12 @@ void AViewerHUD::OnSetVideoStartFrame()
     }
     Frame.bHasData = true;
     
-    VideoControl->SetStartFrame(Frame);
+    MediaControl->SetStartFrame(Frame);
 }
 
-void AViewerHUD::OnSetVideoEndFrame()
+void AViewerHUD::OnSetEndFrame()
 {
-    if (!VideoControl) return;
+    if (!MediaControl) return;
     
     APlayerController* PC = GetOwningPlayerController();
     if (!PC || !PC->GetPawn()) return;
@@ -512,24 +504,57 @@ void AViewerHUD::OnSetVideoEndFrame()
     }
     Frame.bHasData = true;
     
-    VideoControl->SetEndFrame(Frame);
+    MediaControl->SetEndFrame(Frame);
 }
 
-void AViewerHUD::OnPlaySingleClip(int32 ClipIndex)
+void AViewerHUD::OnTimelineScrub(float TimePosition)
 {
-    ClipsToPlay.Empty(); // Clear sequence
-    PlayVideoClip(ClipIndex);
+    if (!MediaControl) return;
+    
+    // Find which clip this time position falls into
+    float AccumulatedTime = 0.0f;
+    for (int32 i = 0; i < MediaControl->GetClipCount(); i++)
+    {
+        FVideoClipData Clip = MediaControl->GetClipData(i);
+        if (TimePosition < AccumulatedTime + Clip.Duration)
+        {
+            // Found the clip
+            float LocalTime = TimePosition - AccumulatedTime;
+            float Alpha = LocalTime / Clip.Duration;
+            
+            if (Clip.bStartSet && Clip.bEndSet)
+            {
+                // Interpolate to preview position
+                FVector PreviewLoc = FMath::Lerp(Clip.StartFrame.Location, Clip.EndFrame.Location, Alpha);
+                FRotator PreviewRot = FMath::Lerp(Clip.StartFrame.Rotation, Clip.EndFrame.Rotation, Alpha);
+                
+                APlayerController* PC = GetOwningPlayerController();
+                if (PC && PC->GetPawn())
+                {
+                    PC->GetPawn()->SetActorLocation(PreviewLoc);
+                    PC->SetControlRotation(PreviewRot);
+                }
+            }
+            break;
+        }
+        AccumulatedTime += Clip.Duration;
+    }
 }
 
-void AViewerHUD::OnExportVideo()
+void AViewerHUD::OnVideoExport()
 {
-    if (!VideoControl) return;
+    ExportVideoSequence();
+}
+
+void AViewerHUD::ExportVideoSequence()
+{
+    if (!MediaControl) return;
     
     // Get all valid clips
     TArray<int32> ValidClips;
-    for (int32 i = 0; i < VideoControl->GetClipCount(); i++)
+    for (int32 i = 0; i < MediaControl->GetClipCount(); i++)
     {
-        FVideoClipData Clip = VideoControl->GetClipData(i);
+        FVideoClipData Clip = MediaControl->GetClipData(i);
         if (Clip.bStartSet && Clip.bEndSet)
         {
             ValidClips.Add(i);
@@ -542,31 +567,35 @@ void AViewerHUD::OnExportVideo()
         return;
     }
     
-    // Calculate total frames (30fps)
+    // Calculate total duration
     float TotalDuration = 0.0f;
     for (int32 ClipIdx : ValidClips)
     {
-        TotalDuration += VideoControl->GetClipData(ClipIdx).Duration;
+        TotalDuration += MediaControl->GetClipData(ClipIdx).Duration;
     }
     
-    int32 TotalFrames = (int32)(TotalDuration * 30.0f);
+    // Create export directory
+    ExportPath = FPaths::ProjectSavedDir() / TEXT("VideoExport");
+    IFileManager::Get().MakeDirectory(*ExportPath, true);
     
-    // Start sequence capture
+    // Start export mode
+    bIsExporting = true;
+    ExportFrameIndex = 0;
+    
+    // Use console command to start movie capture
     APlayerController* PC = GetOwningPlayerController();
     if (PC)
     {
-        // Enable movie capture mode
-        FString ExportPath = FPaths::ProjectSavedDir() / TEXT("VideoExport");
-        IFileManager::Get().MakeDirectory(*ExportPath, true);
+        // Start screenshot sequence
+        FString StartCommand = FString::Printf(TEXT("HighResShot 1920x1080"));
         
-        FString Command = FString::Printf(TEXT("r.setres 1920x1080"));
-        PC->ConsoleCommand(Command);
+        UE_LOG(LogTemp, Log, TEXT("========================================"));
+        UE_LOG(LogTemp, Log, TEXT("VIDEO EXPORT STARTED"));
+        UE_LOG(LogTemp, Log, TEXT("Clips: %d, Duration: %.1f seconds"), ValidClips.Num(), TotalDuration);
+        UE_LOG(LogTemp, Log, TEXT("Export Path: %s"), *ExportPath);
+        UE_LOG(LogTemp, Log, TEXT("========================================"));
         
-        UE_LOG(LogTemp, Log, TEXT("Video export started: %d clips, %.1f seconds, %d frames"), 
-            ValidClips.Num(), TotalDuration, TotalFrames);
-        UE_LOG(LogTemp, Log, TEXT("Export path: %s"), *ExportPath);
-        
-        // Play all clips for recording
+        // Play clips for recording
         ClipsToPlay = ValidClips;
         CurrentClipInSequence = 0;
         PlayVideoClip(ClipsToPlay[0]);
@@ -575,9 +604,9 @@ void AViewerHUD::OnExportVideo()
 
 void AViewerHUD::PlayVideoClip(int32 ClipIndex)
 {
-    if (!VideoControl) return;
+    if (!MediaControl) return;
     
-    FVideoClipData ClipData = VideoControl->GetClipData(ClipIndex);
+    FVideoClipData ClipData = MediaControl->GetClipData(ClipIndex);
     if (!ClipData.bStartSet || !ClipData.bEndSet)
     {
         UE_LOG(LogTemp, Warning, TEXT("Clip %d is not fully set"), ClipIndex);

@@ -11,7 +11,7 @@
 #include "ViewerPlayerController.h"
 #include "ViewerPawn.h"
 #include "ParameterDisplayWidget.h"
-#include "VideoControlWidget.h"
+#include "MediaControlWidget.h"
 #include "VideoClipData.h"
 #include "ViewerHUD.generated.h"
 
@@ -45,7 +45,7 @@ private:
     UParameterDisplayWidget* ParameterDisplay;
     
     UPROPERTY()
-    UVideoControlWidget* VideoControl;
+    UMediaControlWidget* MediaControl;
     
     UPROPERTY()
     ACameraViewController* CameraController;
@@ -82,30 +82,38 @@ private:
     int32 BatchCaptureCurrentIndex = 0;
     FTimerHandle BatchCaptureTimerHandle;
     
-    // Video playback
+    // Media control
     UFUNCTION()
-    void OnVideoClipSelected(int32 ClipIndex);
+    void OnMediaModeChanged(EMediaMode NewMode);
     
     UFUNCTION()
-    void OnPlayAllClips();
+    void OnMediaPhotoShutter();
     
     UFUNCTION()
-    void OnSetVideoStartFrame();
+    void OnVideoClipPlay(int32 ClipIndex);
     
     UFUNCTION()
-    void OnSetVideoEndFrame();
+    void OnVideoPlayAll();
     
     UFUNCTION()
-    void OnPlaySingleClip(int32 ClipIndex);
+    void OnVideoExport();
     
     UFUNCTION()
-    void OnExportVideo();
+    void OnSetStartFrame();
+    
+    UFUNCTION()
+    void OnSetEndFrame();
+    
+    UFUNCTION()
+    void OnTimelineScrub(float TimePosition);
     
     void PlayVideoClip(int32 ClipIndex);
     void UpdateVideoPlayback(float DeltaTime);
+    void ExportVideoSequence();
     
     // Video animation state
     bool bIsPlayingVideo = false;
+    bool bIsExporting = false;
     int32 CurrentPlayingClipIndex = 0;
     float VideoPlaybackTime = 0.0f;
     float VideoPlaybackDuration = 0.0f;
@@ -113,4 +121,6 @@ private:
     FVideoFrameData VideoEndFrame;
     TArray<int32> ClipsToPlay;
     int32 CurrentClipInSequence = 0;
+    int32 ExportFrameIndex = 0;
+    FString ExportPath;
 };
