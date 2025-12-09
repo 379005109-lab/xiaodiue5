@@ -26,6 +26,11 @@ public:
     UPhotoCaptureWidget* PhotoCaptureRef;
     
     bool bRightMouseDown = false;
+    
+    // Store initial position for reset (public for HUD access)
+    FVector InitialLocation;
+    FRotator InitialRotation;
+    bool bInitialStateSaved = false;
 
 protected:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -51,10 +56,5 @@ private:
     void OnMouseScrollUp();
     void OnMouseScrollDown();
     void OnResetShortcut();
-    
-    // Store initial position for reset
-    FVector InitialLocation;
-    FRotator InitialRotation;
-    bool bInitialStateSaved = false;
     void SaveInitialState();
 };
