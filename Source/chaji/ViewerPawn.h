@@ -50,4 +50,5 @@ private:
     void OnRightMouseReleased();
     void OnMouseScrollUp();
     void OnMouseScrollDown();
+    void OnResetShortcut();
 };

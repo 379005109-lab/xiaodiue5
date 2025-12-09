@@ -46,7 +46,7 @@ TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
                     [
                         SAssignNew(ThumbnailContainer, SHorizontalBox)
                     ]
-                    // Add/Remove buttons
+                    // Add/Remove/SelectAll buttons
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .VAlign(VAlign_Center)
@@ -80,6 +80,21 @@ TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("-")))
                                 .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SVerticalBox::Slot()
+                        .AutoHeight()
+                        .Padding(FMargin(0.0f, 4.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity(FLinearColor(0.3f, 0.4f, 0.6f, 1.0f))
+                            .OnClicked_Lambda([this]() { return OnSelectAll(); })
+                            .ContentPadding(FMargin(8.0f, 6.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("全选")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
@@ -210,6 +225,23 @@ void UViewpointControlWidget::RebuildThumbnails()
                             OnCheckboxChanged(Index, NewState == ECheckBoxState::Checked);
                         })
                     ]
+                    // Save button at top-right
+                    + SOverlay::Slot()
+                    .HAlign(HAlign_Right)
+                    .VAlign(VAlign_Top)
+                    .Padding(FMargin(6.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.2f, 0.5f, 0.7f, 1.0f))
+                        .OnClicked_Lambda([this, Index]() { return OnSaveViewpoint(Index); })
+                        .ContentPadding(FMargin(4.0f, 2.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("保存")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
                 ]
             ];
     }
@@ -275,6 +307,35 @@ void UViewpointControlWidget::OnCheckboxChanged(int32 Index, bool bChecked)
     {
         ViewpointSelected[Index] = bChecked;
     }
+}
+
+FReply UViewpointControlWidget::OnSaveViewpoint(int32 Index)
+{
+    OnViewpointSaved.Broadcast(Index);
+    UE_LOG(LogTemp, Log, TEXT("Save viewpoint %d requested"), Index);
+    return FReply::Handled();
+}
+
+FReply UViewpointControlWidget::OnSelectAll()
+{
+    // Toggle all - if any unselected, select all; otherwise deselect all
+    bool bAnyUnselected = false;
+    for (int32 i = 0; i < ViewpointSelected.Num(); i++)
+    {
+        if (!ViewpointSelected[i])
+        {
+            bAnyUnselected = true;
+            break;
+        }
+    }
+    
+    for (int32 i = 0; i < ViewpointSelected.Num(); i++)
+    {
+        ViewpointSelected[i] = bAnyUnselected;
+    }
+    
+    RebuildThumbnails();
+    return FReply::Handled();
 }
 
 TArray<int32> UViewpointControlWidget::GetSelectedViewpoints() const

@@ -306,23 +306,6 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                             ]
                         ]
                     ]
-                    // Batch Capture Button
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
-                    .HAlign(HAlign_Center)
-                    [
-                        SNew(SButton)
-                        .ButtonColorAndOpacity(FLinearColor(0.2f, 0.6f, 0.2f, 1.0f))
-                        .OnClicked_Lambda([this]() { return OnBatchCaptureClicked(); })
-                        .ContentPadding(FMargin(30.0f, 10.0f))
-                        [
-                            SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("批量出图(勾选镜头)")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-                            .ColorAndOpacity(FLinearColor::White)
-                        ]
-                    ]
                     // Status Text
                     + SVerticalBox::Slot()
                     .AutoHeight()
@@ -467,16 +450,16 @@ FReply UPhotoCaptureWidget::OnCaptureClicked()
         FString Command = FString::Printf(TEXT("HighResShot %dx%d"), Width, Height);
         PC->ConsoleCommand(Command);
         
-        // Get save path
-        FString SavePath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
+        // Save path for opening folder
+        LastSavePath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
         
-        // Update status
+        // Update status with clear message
         if (StatusText.IsValid())
         {
-            StatusText->SetText(FText::FromString(FString::Printf(TEXT("%s 截图已保存: %s"), *ResName, *SavePath)));
+            StatusText->SetText(FText::FromString(FString::Printf(TEXT("照片已保存在文件夹中 (%s)"), *ResName)));
         }
         
-        UE_LOG(LogTemp, Log, TEXT("Screenshot %s (%dx%d) saved to: %s"), *ResName, Width, Height, *SavePath);
+        UE_LOG(LogTemp, Log, TEXT("Screenshot %s (%dx%d) saved to: %s"), *ResName, Width, Height, *LastSavePath);
     }
     
     return FReply::Handled();
@@ -532,15 +515,6 @@ FReply UPhotoCaptureWidget::OnSaveViewpointClicked()
             FocalLength, Aperture, FocusDistance)));
     }
     UE_LOG(LogTemp, Log, TEXT("Saved viewpoint: Focal=%.0f, Aperture=%.1f, Focus=%.0f"), FocalLength, Aperture, FocusDistance);
-    return FReply::Handled();
-}
-
-FReply UPhotoCaptureWidget::OnBatchCaptureClicked()
-{
-    if (StatusText.IsValid())
-    {
-        StatusText->SetText(FText::FromString(TEXT("请先勾选镜头，然后点击此按钮批量出图")));
-    }
     return FReply::Handled();
 }
 

@@ -69,6 +69,9 @@ void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     // Mouse scroll for camera shortcuts
     PlayerInputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AViewerPawn::OnMouseScrollUp);
     PlayerInputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AViewerPawn::OnMouseScrollDown);
+    
+    // Escape for reset (Ctrl+Esc)
+    PlayerInputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AViewerPawn::OnResetShortcut);
 }
 
 void AViewerPawn::Tick(float DeltaTime)
@@ -175,5 +178,19 @@ void AViewerPawn::OnMouseScrollDown()
     else if (bAlt)
     {
         PhotoCaptureRef->AdjustFocusDistance(-100.0f);
+    }
+}
+
+void AViewerPawn::OnResetShortcut()
+{
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC) return;
+    
+    // Only reset when Ctrl is held (Ctrl+Esc)
+    bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
+    if (bCtrl && PhotoCaptureRef)
+    {
+        PhotoCaptureRef->LoadCameraSettings(35.0f, 2.8f, 1000.0f);
+        UE_LOG(LogTemp, Log, TEXT("Camera settings reset to default (Ctrl+Esc)"));
     }
 }

@@ -11,7 +11,7 @@ class UTextureRenderTarget2D;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnViewpointChanged, int32, ViewpointIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnViewpointAdded);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnViewpointRemoved);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBatchCapture, const TArray<int32>&, SelectedIndices);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnViewpointSaved, int32, ViewpointIndex);
 
 UCLASS()
 class UViewpointControlWidget : public UUserWidget
@@ -29,7 +29,7 @@ public:
     FOnViewpointRemoved OnViewpointRemoved;
     
     UPROPERTY(BlueprintAssignable)
-    FOnBatchCapture OnBatchCapture;
+    FOnViewpointSaved OnViewpointSaved;
 
     UFUNCTION(BlueprintCallable)
     void SetViewpointCount(int32 Count);
@@ -67,5 +67,7 @@ private:
     FReply OnToggleClicked();
     FReply OnAddViewpoint();
     FReply OnRemoveViewpoint();
+    FReply OnSaveViewpoint(int32 Index);
+    FReply OnSelectAll();
     void OnCheckboxChanged(int32 Index, bool bChecked);
 };

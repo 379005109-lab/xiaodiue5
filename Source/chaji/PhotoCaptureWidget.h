@@ -63,7 +63,6 @@ private:
     FReply OnCaptureClicked();
     FReply OnShutterClicked();
     FReply OnSaveViewpointClicked();
-    FReply OnBatchCaptureClicked();
     FReply OnResetClicked();
     FReply OnResolution1K();
     FReply OnResolution2K();
