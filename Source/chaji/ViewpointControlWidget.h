@@ -61,6 +61,10 @@ public:
     void SaveViewpointData(int32 Index, const FViewpointData& Data);
     FViewpointData GetViewpointData(int32 Index) const;
     bool HasViewpointData(int32 Index) const;
+    
+    // Reset to initial state
+    void SaveInitialState();
+    void ResetToInitialState();
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -82,6 +86,10 @@ private:
     
     // Viewpoint saved data
     TArray<FViewpointData> ViewpointDataArray;
+
+    // Initial state storage for reset
+    int32 InitialViewpointCount = 5;
+    bool bInitialStateSaved = false;
 
     void RebuildThumbnails();
     void UpdateVisibility();

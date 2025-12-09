@@ -406,3 +406,35 @@ bool UViewpointControlWidget::HasViewpointData(int32 Index) const
 {
     return ViewpointDataArray.IsValidIndex(Index) && ViewpointDataArray[Index].bHasData;
 }
+
+void UViewpointControlWidget::SaveInitialState()
+{
+    if (!bInitialStateSaved)
+    {
+        InitialViewpointCount = ViewpointCount;
+        bInitialStateSaved = true;
+        UE_LOG(LogTemp, Log, TEXT("Saved initial viewpoint count: %d"), InitialViewpointCount);
+    }
+}
+
+void UViewpointControlWidget::ResetToInitialState()
+{
+    // Reset viewpoint count to initial
+    ViewpointCount = InitialViewpointCount;
+    CurrentViewpoint = 0;
+    
+    // Clear and reinitialize arrays
+    ViewpointSelected.Empty();
+    ViewpointDataArray.Empty();
+    
+    for (int32 i = 0; i < ViewpointCount; i++)
+    {
+        ViewpointSelected.Add(false);
+        ViewpointDataArray.Add(FViewpointData());
+    }
+    
+    // Rebuild UI
+    RebuildThumbnails();
+    
+    UE_LOG(LogTemp, Log, TEXT("Reset to initial state: %d viewpoints"), ViewpointCount);
+}

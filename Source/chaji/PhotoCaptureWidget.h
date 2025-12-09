@@ -6,6 +6,7 @@
 #include "PhotoCaptureWidget.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBatchCaptureStart, const TArray<int32>&, Indices);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnResetViewpoints);
 
 UCLASS()
 class UPhotoCaptureWidget : public UUserWidget
@@ -34,6 +35,10 @@ public:
     // Batch capture support
     UPROPERTY(BlueprintAssignable)
     FOnBatchCaptureStart OnBatchCaptureStart;
+    
+    // Reset viewpoints delegate
+    UPROPERTY(BlueprintAssignable)
+    FOnResetViewpoints OnResetViewpoints;
     
     void CaptureMultiple(const TArray<int32>& Indices);
     void CaptureSingle(); // Take a single screenshot
@@ -68,6 +73,15 @@ private:
     
     // Screenshot resolution: 0=1K, 1=2K, 2=4K
     int32 ResolutionIndex = 0;
+    
+    // Aspect ratio: 0=16:9, 1=9:16, 2=1:1, 3=3:2, 4=2:3
+    int32 AspectRatioIndex = 0;
+    
+    FReply OnAspectRatio16_9();
+    FReply OnAspectRatio9_16();
+    FReply OnAspectRatio1_1();
+    FReply OnAspectRatio3_2();
+    FReply OnAspectRatio2_3();
     
     void UpdateParameterDisplay();
     void ApplyAllCameraSettings();

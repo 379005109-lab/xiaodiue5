@@ -21,33 +21,50 @@
 TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
 {
     return SNew(SVerticalBox)
-        // Toggle Button Row
+        // Top Row: Camera icon + Shutter + Expand arrow
         + SVerticalBox::Slot()
         .AutoHeight()
         [
-            SNew(SHorizontalBox)
-            + SHorizontalBox::Slot()
-            .AutoWidth()
+            SNew(SBorder)
+            .BorderBackgroundColor(FLinearColor(0.15f, 0.15f, 0.15f, 0.95f))
+            .Padding(FMargin(10.0f, 8.0f))
             [
-                SNew(SButton)
-                .ButtonColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 0.9f))
-                .OnClicked_Lambda([this]() { return OnToggleClicked(); })
-                .ContentPadding(FMargin(12.0f, 8.0f))
+                SNew(SHorizontalBox)
+                // Camera icon
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
                 [
-                    SNew(SHorizontalBox)
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
+                    SNew(STextBlock)
+                    .Text(FText::FromString(TEXT("📷")))
+                    .Font(FCoreStyle::GetDefaultFontStyle("Bold", 16))
+                    .ColorAndOpacity(FLinearColor::White)
+                ]
+                // Shutter button
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .Padding(FMargin(10.0f, 0.0f, 0.0f, 0.0f))
+                [
+                    SNew(SButton)
+                    .ButtonColorAndOpacity(FLinearColor(0.2f, 0.5f, 0.8f, 1.0f))
+                    .OnClicked_Lambda([this]() { return OnShutterClicked(); })
+                    .ContentPadding(FMargin(20.0f, 6.0f))
                     [
                         SNew(STextBlock)
-                        .Text(FText::FromString(TEXT("📷 拍照")))
-                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
+                        .Text(FText::FromString(TEXT("快门")))
+                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
                         .ColorAndOpacity(FLinearColor::White)
                     ]
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    .Padding(FMargin(8.0f, 0.0f, 0.0f, 0.0f))
-                    .VAlign(VAlign_Center)
+                ]
+                // Expand arrow
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .Padding(FMargin(8.0f, 0.0f, 0.0f, 0.0f))
+                [
+                    SNew(SButton)
+                    .ButtonColorAndOpacity(FLinearColor(0.25f, 0.25f, 0.25f, 1.0f))
+                    .OnClicked_Lambda([this]() { return OnToggleClicked(); })
+                    .ContentPadding(FMargin(8.0f, 6.0f))
                     [
                         SNew(STextBlock)
                         .Text_Lambda([this]() { return FText::FromString(bIsExpanded ? TEXT("▲") : TEXT("▼")); })
@@ -57,7 +74,7 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                 ]
             ]
         ]
-        // Settings Panel
+        // Expandable Settings Panel
         + SVerticalBox::Slot()
         .AutoHeight()
         [
@@ -65,226 +82,166 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
             .Visibility(EVisibility::Collapsed)
             [
                 SNew(SBorder)
-                .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.9f))
+                .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.95f))
                 .Padding(FMargin(15.0f))
                 [
                     SNew(SVerticalBox)
-                    // Focal Length
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 5.0f))
-                    [
-                        SNew(SHorizontalBox)
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                        [
-                            SNew(SBox)
-                            .WidthOverride(80.0f)
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("焦距")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .FillWidth(1.0f)
-                        .Padding(FMargin(10.0f, 0.0f))
-                        [
-                            SNew(SSlider)
-                            .Value_Lambda([this]() { return (FocalLength - 10.0f) / 190.0f; })
-                            .OnValueChanged_Lambda([this](float Value) { OnFocalLengthChanged(Value); })
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                        [
-                            SNew(SBox)
-                            .WidthOverride(60.0f)
-                            [
-                                SAssignNew(FocalLengthText, STextBlock)
-                                .Text(FText::FromString(TEXT("35mm")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                    ]
-                    // Aperture
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 5.0f))
-                    [
-                        SNew(SHorizontalBox)
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                        [
-                            SNew(SBox)
-                            .WidthOverride(80.0f)
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("光圈")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .FillWidth(1.0f)
-                        .Padding(FMargin(10.0f, 0.0f))
-                        [
-                            SNew(SSlider)
-                            .Value_Lambda([this]() { return (Aperture - 1.2f) / 20.8f; })
-                            .OnValueChanged_Lambda([this](float Value) { OnApertureChanged(Value); })
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                        [
-                            SNew(SBox)
-                            .WidthOverride(60.0f)
-                            [
-                                SAssignNew(ApertureText, STextBlock)
-                                .Text(FText::FromString(TEXT("f/2.8")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                    ]
-                    // Focus Distance
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 5.0f))
-                    [
-                        SNew(SHorizontalBox)
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                        [
-                            SNew(SBox)
-                            .WidthOverride(80.0f)
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("手动距离")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .FillWidth(1.0f)
-                        .Padding(FMargin(10.0f, 0.0f))
-                        [
-                            SNew(SSlider)
-                            .Value_Lambda([this]() { return FocusDistance / 10000.0f; })
-                            .OnValueChanged_Lambda([this](float Value) { OnFocusDistanceChanged(Value); })
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                        [
-                            SNew(SBox)
-                            .WidthOverride(60.0f)
-                            [
-                                SAssignNew(FocusDistanceText, STextBlock)
-                                .Text(FText::FromString(TEXT("1000")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                    ]
-                    // Reset Button
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
-                    .HAlign(HAlign_Center)
-                    [
-                        SNew(SButton)
-                        .ButtonColorAndOpacity(FLinearColor(0.4f, 0.4f, 0.4f, 1.0f))
-                        .OnClicked_Lambda([this]() { return OnResetClicked(); })
-                        .ContentPadding(FMargin(20.0f, 8.0f))
-                        [
-                            SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("恢复默认")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                            .ColorAndOpacity(FLinearColor::White)
-                        ]
-                    ]
                     // Resolution Selection
                     + SVerticalBox::Slot()
                     .AutoHeight()
-                    .Padding(FMargin(0.0f, 15.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(0.0f, 5.0f))
                     [
                         SNew(SHorizontalBox)
                         + SHorizontalBox::Slot()
                         .AutoWidth()
                         .VAlign(VAlign_Center)
                         [
-                            SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("分辨率：")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
-                            .ColorAndOpacity(FLinearColor::White)
+                            SNew(SBox)
+                            .WidthOverride(70.0f)
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("分辨率")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
                         ]
                         + SHorizontalBox::Slot()
                         .AutoWidth()
-                        .Padding(FMargin(10.0f, 0.0f, 0.0f, 0.0f))
                         [
                             SNew(SButton)
                             .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
                             .OnClicked_Lambda([this]() { return OnResolution1K(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
+                            .ContentPadding(FMargin(8.0f, 4.0f))
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("1K")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
                         + SHorizontalBox::Slot()
                         .AutoWidth()
-                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
+                        .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
                         [
                             SNew(SButton)
                             .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
                             .OnClicked_Lambda([this]() { return OnResolution2K(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
+                            .ContentPadding(FMargin(8.0f, 4.0f))
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("2K")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnResolution4K(); })
+                            .ContentPadding(FMargin(8.0f, 4.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("4K")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                    ]
+                    // Aspect Ratio Selection
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(SBox)
+                            .WidthOverride(70.0f)
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("比例")))
                                 .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
                         + SHorizontalBox::Slot()
                         .AutoWidth()
-                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
                         [
                             SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
-                            .OnClicked_Lambda([this]() { return OnResolution4K(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnAspectRatio16_9(); })
+                            .ContentPadding(FMargin(6.0f, 4.0f))
                             [
                                 SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("4K")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                                .Text(FText::FromString(TEXT("16:9")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
-                    ]
-                    // Shutter button
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 15.0f, 0.0f, 0.0f))
-                    .HAlign(HAlign_Center)
-                    [
-                        SNew(SButton)
-                        .ButtonColorAndOpacity(FLinearColor(0.2f, 0.4f, 0.8f, 1.0f))
-                        .OnClicked_Lambda([this]() { return OnShutterClicked(); })
-                        .ContentPadding(FMargin(40.0f, 12.0f))
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
                         [
-                            SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("快门")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
-                            .ColorAndOpacity(FLinearColor::White)
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnAspectRatio9_16(); })
+                            .ContentPadding(FMargin(6.0f, 4.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("9:16")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnAspectRatio1_1(); })
+                            .ContentPadding(FMargin(6.0f, 4.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("1:1")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 3 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnAspectRatio3_2(); })
+                            .ContentPadding(FMargin(6.0f, 4.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("3:2")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 4 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnAspectRatio2_3(); })
+                            .ContentPadding(FMargin(6.0f, 4.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("2:3")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
                         ]
                     ]
                     // Status Text
@@ -298,21 +255,38 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                         .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
                         .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
                     ]
-                    // Open Folder Button (shown after save)
+                    // Open Folder Button
                     + SVerticalBox::Slot()
                     .AutoHeight()
-                    .Padding(FMargin(0.0f, 5.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
                     .HAlign(HAlign_Center)
                     [
                         SNew(SButton)
                         .ButtonColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.5f, 1.0f))
                         .OnClicked_Lambda([this]() { return OnOpenFolderClicked(); })
+                        .ContentPadding(FMargin(12.0f, 5.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("打开文件夹")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor(0.6f, 0.8f, 1.0f))
+                        ]
+                    ]
+                    // Reset Button (at bottom)
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 12.0f, 0.0f, 0.0f))
+                    .HAlign(HAlign_Center)
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.5f, 0.3f, 0.3f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnResetClicked(); })
                         .ContentPadding(FMargin(15.0f, 6.0f))
                         [
                             SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("点击打开文件夹")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                            .ColorAndOpacity(FLinearColor(0.6f, 0.8f, 1.0f))
+                            .Text(FText::FromString(TEXT("恢复默认")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                            .ColorAndOpacity(FLinearColor::White)
                         ]
                     ]
                 ]
@@ -415,20 +389,33 @@ FReply UPhotoCaptureWidget::OnCaptureClicked()
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (PC)
     {
-        // Resolution based on selection
-        int32 Width = 1920;
-        int32 Height = 1080;
-        FString ResName = TEXT("1K");
-        
+        // Base resolution
+        int32 BaseSize = 1080;
         switch (ResolutionIndex)
         {
-            case 0: Width = 1920; Height = 1080; ResName = TEXT("1K"); break;
-            case 1: Width = 2560; Height = 1440; ResName = TEXT("2K"); break;
-            case 2: Width = 3840; Height = 2160; ResName = TEXT("4K"); break;
+            case 0: BaseSize = 1080; break; // 1K
+            case 1: BaseSize = 1440; break; // 2K
+            case 2: BaseSize = 2160; break; // 4K
         }
         
+        // Calculate dimensions based on aspect ratio
+        int32 Width, Height;
+        switch (AspectRatioIndex)
+        {
+            case 0: Width = BaseSize * 16 / 9; Height = BaseSize; break;  // 16:9
+            case 1: Width = BaseSize * 9 / 16; Height = BaseSize; break;  // 9:16
+            case 2: Width = BaseSize; Height = BaseSize; break;           // 1:1
+            case 3: Width = BaseSize * 3 / 2; Height = BaseSize; break;   // 3:2
+            case 4: Width = BaseSize * 2 / 3; Height = BaseSize; break;   // 2:3
+            default: Width = BaseSize * 16 / 9; Height = BaseSize; break;
+        }
+        
+        // Increment counter for naming
+        ScreenshotCounter++;
+        FString Filename = FString::Printf(TEXT("%s_%d"), *CurrentCategoryName, ScreenshotCounter);
+        
         // Use HighResShot console command with resolution
-        FString Command = FString::Printf(TEXT("HighResShot %dx%d"), Width, Height);
+        FString Command = FString::Printf(TEXT("HighResShot %dx%d filename=%s"), Width, Height, *Filename);
         PC->ConsoleCommand(Command);
         
         // Save path for opening folder
@@ -437,10 +424,10 @@ FReply UPhotoCaptureWidget::OnCaptureClicked()
         // Update status with clear message
         if (StatusText.IsValid())
         {
-            StatusText->SetText(FText::FromString(FString::Printf(TEXT("照片已保存在文件夹中 (%s)"), *ResName)));
+            StatusText->SetText(FText::FromString(FString::Printf(TEXT("已保存: %s (%dx%d)"), *Filename, Width, Height)));
         }
         
-        UE_LOG(LogTemp, Log, TEXT("Screenshot %s (%dx%d) saved to: %s"), *ResName, Width, Height, *LastSavePath);
+        UE_LOG(LogTemp, Log, TEXT("Screenshot saved: %s (%dx%d)"), *Filename, Width, Height);
     }
     
     return FReply::Handled();
@@ -448,15 +435,19 @@ FReply UPhotoCaptureWidget::OnCaptureClicked()
 
 FReply UPhotoCaptureWidget::OnResetClicked()
 {
+    // Reset camera parameters
     FocalLength = DefaultFocalLength;
     Aperture = DefaultAperture;
     FocusDistance = DefaultFocusDistance;
     UpdateParameterDisplay();
     ApplyAllCameraSettings();
     
+    // Notify HUD to reset viewpoints to initial state
+    OnResetViewpoints.Broadcast();
+    
     if (StatusText.IsValid())
     {
-        StatusText->SetText(FText::FromString(TEXT("已恢复默认参数")));
+        StatusText->SetText(FText::FromString(TEXT("已恢复镜头初始状态")));
     }
     
     return FReply::Handled();
@@ -477,6 +468,36 @@ FReply UPhotoCaptureWidget::OnResolution2K()
 FReply UPhotoCaptureWidget::OnResolution4K()
 {
     ResolutionIndex = 2;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnAspectRatio16_9()
+{
+    AspectRatioIndex = 0;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnAspectRatio9_16()
+{
+    AspectRatioIndex = 1;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnAspectRatio1_1()
+{
+    AspectRatioIndex = 2;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnAspectRatio3_2()
+{
+    AspectRatioIndex = 3;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnAspectRatio2_3()
+{
+    AspectRatioIndex = 4;
     return FReply::Handled();
 }
 
@@ -509,20 +530,31 @@ void UPhotoCaptureWidget::CaptureSingle()
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (!PC) return;
     
-    int32 Width = 1920;
-    int32 Height = 1080;
-    
+    // Base resolution
+    int32 BaseSize = 1080;
     switch (ResolutionIndex)
     {
-        case 0: Width = 1920; Height = 1080; break;
-        case 1: Width = 2560; Height = 1440; break;
-        case 2: Width = 3840; Height = 2160; break;
+        case 0: BaseSize = 1080; break; // 1K
+        case 1: BaseSize = 1440; break; // 2K
+        case 2: BaseSize = 2160; break; // 4K
+    }
+    
+    // Calculate dimensions based on aspect ratio
+    int32 Width, Height;
+    switch (AspectRatioIndex)
+    {
+        case 0: Width = BaseSize * 16 / 9; Height = BaseSize; break;  // 16:9
+        case 1: Width = BaseSize * 9 / 16; Height = BaseSize; break;  // 9:16
+        case 2: Width = BaseSize; Height = BaseSize; break;           // 1:1
+        case 3: Width = BaseSize * 3 / 2; Height = BaseSize; break;   // 3:2
+        case 4: Width = BaseSize * 2 / 3; Height = BaseSize; break;   // 2:3
+        default: Width = BaseSize * 16 / 9; Height = BaseSize; break;
     }
     
     // Increment counter for naming
     ScreenshotCounter++;
     
-    // Create filename with category name: 分类名_1, 分类名_2, etc.
+    // Create filename with category name
     FString Filename = FString::Printf(TEXT("%s_%d"), *CurrentCategoryName, ScreenshotCounter);
     
     // Use HighResShot with filename

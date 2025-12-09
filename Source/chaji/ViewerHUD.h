@@ -67,6 +67,9 @@ private:
     UFUNCTION()
     void OnBatchCaptureStart(const TArray<int32>& Indices);
     
+    UFUNCTION()
+    void OnResetViewpoints();
+    
     void PerformBatchCapture(const TArray<int32>& Indices, int32 CurrentIndex);
     
     // Batch capture state

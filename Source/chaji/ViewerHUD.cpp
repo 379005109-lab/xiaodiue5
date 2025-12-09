@@ -114,6 +114,7 @@ void AViewerHUD::SetupUI()
         if (CameraController && CameraController->Categories.Num() > 0)
         {
             ViewpointControl->SetViewpointCount(CameraController->Categories[0].Viewpoints.Num());
+            ViewpointControl->SaveInitialState();
         }
     }
     
@@ -135,6 +136,9 @@ void AViewerHUD::SetupUI()
         
         // Bind batch capture event
         PhotoCapture->OnBatchCaptureStart.AddDynamic(this, &AViewerHUD::OnBatchCaptureStart);
+        
+        // Bind reset viewpoints event
+        PhotoCapture->OnResetViewpoints.AddDynamic(this, &AViewerHUD::OnResetViewpoints);
         
         // Set reference to pawn for shortcuts
         AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
@@ -325,6 +329,28 @@ void AViewerHUD::OnBatchCaptureStart(const TArray<int32>& Indices)
     
     // Start the sequence
     PerformBatchCapture(BatchCaptureIndices, 0);
+}
+
+void AViewerHUD::OnResetViewpoints()
+{
+    if (ViewpointControl)
+    {
+        ViewpointControl->ResetToInitialState();
+        
+        // Also reset camera position to initial
+        APlayerController* PC = GetOwningPlayerController();
+        if (PC)
+        {
+            AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
+            if (ViewerPawn && ViewerPawn->bInitialStateSaved)
+            {
+                ViewerPawn->SetActorLocation(ViewerPawn->InitialLocation);
+                PC->SetControlRotation(ViewerPawn->InitialRotation);
+            }
+        }
+        
+        UE_LOG(LogTemp, Log, TEXT("Reset viewpoints to initial state"));
+    }
 }
 
 void AViewerHUD::PerformBatchCapture(const TArray<int32>& Indices, int32 CurrentIndex)
