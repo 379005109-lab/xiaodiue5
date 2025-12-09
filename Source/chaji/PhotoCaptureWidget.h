@@ -57,15 +57,22 @@ private:
     void UpdateParameterDisplay();
     void ApplyAllCameraSettings();
     void UpdateResolutionText();
+    void ShowSaveNotification(const FString& Path);
     
     FReply OnToggleClicked();
     FReply OnCaptureClicked();
+    FReply OnShutterClicked();
+    FReply OnSaveViewpointClicked();
+    FReply OnBatchCaptureClicked();
     FReply OnResetClicked();
     FReply OnResolution1K();
     FReply OnResolution2K();
     FReply OnResolution4K();
+    FReply OnOpenFolderClicked();
     
     void OnFocalLengthChanged(float Value);
     void OnApertureChanged(float Value);
     void OnFocusDistanceChanged(float Value);
+    
+    FString LastSavePath;
 };

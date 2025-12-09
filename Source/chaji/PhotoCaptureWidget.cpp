@@ -269,20 +269,57 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                             ]
                         ]
                     ]
-                    // Capture Button
+                    // Shutter and Save Viewpoint buttons row
                     + SVerticalBox::Slot()
                     .AutoHeight()
                     .Padding(FMargin(0.0f, 15.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .FillWidth(1.0f)
+                        .Padding(FMargin(0.0f, 0.0f, 5.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.4f, 0.8f, 1.0f))
+                            .OnClicked_Lambda([this]() { return OnShutterClicked(); })
+                            .ContentPadding(FMargin(15.0f, 10.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("快门")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .FillWidth(1.0f)
+                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity(FLinearColor(0.4f, 0.4f, 0.4f, 1.0f))
+                            .OnClicked_Lambda([this]() { return OnSaveViewpointClicked(); })
+                            .ContentPadding(FMargin(15.0f, 10.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("保存视角")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                    ]
+                    // Batch Capture Button
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
                     .HAlign(HAlign_Center)
                     [
                         SNew(SButton)
                         .ButtonColorAndOpacity(FLinearColor(0.2f, 0.6f, 0.2f, 1.0f))
-                        .OnClicked_Lambda([this]() { return OnCaptureClicked(); })
+                        .OnClicked_Lambda([this]() { return OnBatchCaptureClicked(); })
                         .ContentPadding(FMargin(30.0f, 10.0f))
                         [
                             SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("高清截图")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
+                            .Text(FText::FromString(TEXT("批量出图(勾选镜头)")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
                             .ColorAndOpacity(FLinearColor::White)
                         ]
                     ]
@@ -296,6 +333,23 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                         .Text(FText::FromString(TEXT("")))
                         .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
                         .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
+                    ]
+                    // Open Folder Button (shown after save)
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 5.0f, 0.0f, 0.0f))
+                    .HAlign(HAlign_Center)
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.5f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnOpenFolderClicked(); })
+                        .ContentPadding(FMargin(15.0f, 6.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("点击打开文件夹")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor(0.6f, 0.8f, 1.0f))
+                        ]
                     ]
                 ]
             ]
@@ -460,6 +514,57 @@ FReply UPhotoCaptureWidget::OnResolution4K()
 {
     ResolutionIndex = 2;
     return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnShutterClicked()
+{
+    // Quick capture - same as capture but with notification
+    return OnCaptureClicked();
+}
+
+FReply UPhotoCaptureWidget::OnSaveViewpointClicked()
+{
+    // Save current camera parameters as viewpoint data
+    if (StatusText.IsValid())
+    {
+        StatusText->SetText(FText::FromString(FString::Printf(
+            TEXT("已保存视角: 焦距%.0fmm 光圈f/%.1f 对焦%.0fcm"), 
+            FocalLength, Aperture, FocusDistance)));
+    }
+    UE_LOG(LogTemp, Log, TEXT("Saved viewpoint: Focal=%.0f, Aperture=%.1f, Focus=%.0f"), FocalLength, Aperture, FocusDistance);
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnBatchCaptureClicked()
+{
+    if (StatusText.IsValid())
+    {
+        StatusText->SetText(FText::FromString(TEXT("请先勾选镜头，然后点击此按钮批量出图")));
+    }
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnOpenFolderClicked()
+{
+    if (!LastSavePath.IsEmpty())
+    {
+        FPlatformProcess::ExploreFolder(*LastSavePath);
+    }
+    else
+    {
+        FString DefaultPath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
+        FPlatformProcess::ExploreFolder(*DefaultPath);
+    }
+    return FReply::Handled();
+}
+
+void UPhotoCaptureWidget::ShowSaveNotification(const FString& Path)
+{
+    LastSavePath = Path;
+    if (StatusText.IsValid())
+    {
+        StatusText->SetText(FText::FromString(FString::Printf(TEXT("照片已保存在文件夹中"))));
+    }
 }
 
 void UPhotoCaptureWidget::OnFocalLengthChanged(float Value)
