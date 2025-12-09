@@ -194,34 +194,42 @@ void AViewerHUD::Tick(float DeltaTime)
 
 void AViewerHUD::HandleGlobalInput()
 {
-    // Scroll wheel is now handled by OnMouseWheel callback
+    if (!PhotoCapture) return;
+    
+    AViewerPlayerController* VPC = Cast<AViewerPlayerController>(GetOwningPlayerController());
+    if (!VPC) return;
+    
+    // Check if there was a scroll event
+    float ScrollDelta = VPC->LastScrollDelta;
+    if (FMath::Abs(ScrollDelta) > 0.01f)
+    {
+        // Reset scroll delta
+        VPC->LastScrollDelta = 0.0f;
+        
+        // Check modifier keys
+        bool bCtrl = VPC->IsInputKeyDown(EKeys::LeftControl) || VPC->IsInputKeyDown(EKeys::RightControl);
+        bool bShift = VPC->IsInputKeyDown(EKeys::LeftShift) || VPC->IsInputKeyDown(EKeys::RightShift);
+        bool bAlt = VPC->IsInputKeyDown(EKeys::LeftAlt) || VPC->IsInputKeyDown(EKeys::RightAlt);
+        
+        if (bCtrl)
+        {
+            PhotoCapture->AdjustFocalLength(ScrollDelta * 5.0f);
+            UE_LOG(LogTemp, Log, TEXT("Ctrl+Scroll: Focal Length"));
+        }
+        else if (bShift)
+        {
+            PhotoCapture->AdjustAperture(ScrollDelta * 0.5f);
+            UE_LOG(LogTemp, Log, TEXT("Shift+Scroll: Aperture"));
+        }
+        else if (bAlt)
+        {
+            PhotoCapture->AdjustFocusDistance(ScrollDelta * 100.0f);
+            UE_LOG(LogTemp, Log, TEXT("Alt+Scroll: Focus Distance"));
+        }
+    }
 }
 
 void AViewerHUD::OnMouseWheel(float Delta)
 {
-    if (!PhotoCapture) return;
-    
-    APlayerController* PC = GetOwningPlayerController();
-    if (!PC) return;
-    
-    // Check modifier keys
-    bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
-    bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
-    bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
-    
-    if (bCtrl)
-    {
-        // Ctrl + Scroll = Focal Length
-        PhotoCapture->AdjustFocalLength(Delta * 5.0f);
-    }
-    else if (bShift)
-    {
-        // Shift + Scroll = Aperture  
-        PhotoCapture->AdjustAperture(Delta * 0.5f);
-    }
-    else if (bAlt)
-    {
-        // Alt + Scroll = Focus Distance
-        PhotoCapture->AdjustFocusDistance(Delta * 100.0f);
-    }
+    // This is called from PlayerController, handled in HandleGlobalInput
 }
