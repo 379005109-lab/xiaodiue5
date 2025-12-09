@@ -244,29 +244,32 @@ void UPhotoCaptureWidget::ApplyAllCameraSettings()
     float FOV = 2.0f * FMath::RadiansToDegrees(FMath::Atan(18.0f / FocalLength));
     PC->PlayerCameraManager->SetFOV(FOV);
     
-    // Apply DOF settings via post process
-    FPostProcessSettings PPSettings;
+    // Apply Cinematic DOF via console commands for immediate effect
+    // Use Cinematic DOF method (works better than post process settings)
+    FString DOFCommand = FString::Printf(
+        TEXT("r.DepthOfFieldQuality 4"));
+    PC->ConsoleCommand(DOFCommand);
+    
+    // Set DOF parameters via CVar
+    static IConsoleVariable* FstopCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.DepthOfField.DepthBlurAmount"));
+    
+    // Apply to camera manager's post process
+    FPostProcessSettings& PPSettings = PC->PlayerCameraManager->PostProcessSettings;
+    
+    // Enable Cinematic DOF
     PPSettings.bOverride_DepthOfFieldFstop = true;
     PPSettings.DepthOfFieldFstop = Aperture;
     PPSettings.bOverride_DepthOfFieldFocalDistance = true;
     PPSettings.DepthOfFieldFocalDistance = FocusDistance;
     PPSettings.bOverride_DepthOfFieldSensorWidth = true;
-    PPSettings.DepthOfFieldSensorWidth = 36.0f; // Full frame
+    PPSettings.DepthOfFieldSensorWidth = 36.0f;
+    PPSettings.bOverride_DepthOfFieldMinFstop = true;
+    PPSettings.DepthOfFieldMinFstop = 1.2f;
+    PPSettings.bOverride_DepthOfFieldBladeCount = true;
+    PPSettings.DepthOfFieldBladeCount = 7;
     
-    // Find or create camera with post process
-    if (APawn* Pawn = PC->GetPawn())
-    {
-        UCameraComponent* CamComp = Pawn->FindComponentByClass<UCameraComponent>();
-        if (CamComp)
-        {
-            CamComp->PostProcessSettings.bOverride_DepthOfFieldFstop = true;
-            CamComp->PostProcessSettings.DepthOfFieldFstop = Aperture;
-            CamComp->PostProcessSettings.bOverride_DepthOfFieldFocalDistance = true;
-            CamComp->PostProcessSettings.DepthOfFieldFocalDistance = FocusDistance;
-            CamComp->PostProcessSettings.bOverride_DepthOfFieldSensorWidth = true;
-            CamComp->PostProcessSettings.DepthOfFieldSensorWidth = 36.0f;
-        }
-    }
+    // Enable post process blend
+    PC->PlayerCameraManager->PostProcessBlendWeight = 1.0f;
 }
 
 FReply UPhotoCaptureWidget::OnToggleClicked()
@@ -319,33 +322,6 @@ void UPhotoCaptureWidget::OnFocusDistanceChanged(float Value)
     FocusDistance = 50.0f + Value * 9950.0f; // 50cm to 10000cm
     UpdateParameterDisplay();
     ApplyAllCameraSettings();
-}
-
-// Scroll wheel shortcuts
-FReply UPhotoCaptureWidget::NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
-{
-    float Delta = InMouseEvent.GetWheelDelta();
-    
-    if (FSlateApplication::Get().GetModifierKeys().IsControlDown())
-    {
-        // Ctrl + Scroll = Focal Length
-        AdjustFocalLength(Delta * 5.0f);
-        return FReply::Handled();
-    }
-    else if (FSlateApplication::Get().GetModifierKeys().IsShiftDown())
-    {
-        // Shift + Scroll = Aperture
-        AdjustAperture(Delta * 0.5f);
-        return FReply::Handled();
-    }
-    else if (FSlateApplication::Get().GetModifierKeys().IsAltDown())
-    {
-        // Alt + Scroll = Focus Distance
-        AdjustFocusDistance(Delta * 100.0f);
-        return FReply::Handled();
-    }
-    
-    return Super::NativeOnMouseWheel(InGeometry, InMouseEvent);
 }
 
 void UPhotoCaptureWidget::AdjustFocalLength(float Delta)

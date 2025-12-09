@@ -16,9 +16,14 @@ class AViewerHUD : public AHUD
 
 public:
     AViewerHUD();
+    
+    // Public access to PhotoCapture for global shortcuts
+    UFUNCTION(BlueprintCallable)
+    UPhotoCaptureWidget* GetPhotoCaptureWidget() const { return PhotoCapture; }
 
 protected:
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
 
 private:
     UPROPERTY()
@@ -34,6 +39,7 @@ private:
     ACameraViewController* CameraController;
 
     void SetupUI();
+    void HandleGlobalInput();
 
     UFUNCTION()
     void OnCategorySelected(int32 Index);

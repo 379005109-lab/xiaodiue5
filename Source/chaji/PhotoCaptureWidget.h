@@ -21,7 +21,6 @@ public:
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
-    virtual FReply NativeOnMouseWheel(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 private:
     TSharedPtr<class SBox> ContentBox;

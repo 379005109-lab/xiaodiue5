@@ -2,9 +2,11 @@
 #include "ViewerHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Framework/Application/SlateApplication.h"
 
 AViewerHUD::AViewerHUD()
 {
+    PrimaryActorTick.bCanEverTick = true;
 }
 
 void AViewerHUD::BeginPlay()
@@ -131,5 +133,51 @@ void AViewerHUD::OnViewpointChanged(int32 Index)
     if (CameraController)
     {
         CameraController->SetViewpoint(Index);
+    }
+}
+
+void AViewerHUD::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    HandleGlobalInput();
+}
+
+void AViewerHUD::HandleGlobalInput()
+{
+    if (!PhotoCapture) return;
+    
+    APlayerController* PC = GetOwningPlayerController();
+    if (!PC) return;
+    
+    // Check for mouse wheel with modifiers
+    static float LastScrollTime = 0.0f;
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    
+    // Get scroll delta from input
+    float ScrollDelta = PC->GetInputAxisValue(TEXT("MouseWheelAxis"));
+    
+    if (FMath::Abs(ScrollDelta) > 0.01f && (CurrentTime - LastScrollTime) > 0.05f)
+    {
+        LastScrollTime = CurrentTime;
+        
+        bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
+        bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
+        bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
+        
+        if (bCtrl)
+        {
+            // Ctrl + Scroll = Focal Length
+            PhotoCapture->AdjustFocalLength(ScrollDelta * 5.0f);
+        }
+        else if (bShift)
+        {
+            // Shift + Scroll = Aperture
+            PhotoCapture->AdjustAperture(ScrollDelta * 0.5f);
+        }
+        else if (bAlt)
+        {
+            // Alt + Scroll = Focus Distance
+            PhotoCapture->AdjustFocusDistance(ScrollDelta * 100.0f);
+        }
     }
 }
