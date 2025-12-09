@@ -244,32 +244,28 @@ void UPhotoCaptureWidget::ApplyAllCameraSettings()
     float FOV = 2.0f * FMath::RadiansToDegrees(FMath::Atan(18.0f / FocalLength));
     PC->PlayerCameraManager->SetFOV(FOV);
     
-    // Apply Cinematic DOF via console commands for immediate effect
-    // Use Cinematic DOF method (works better than post process settings)
-    FString DOFCommand = FString::Printf(
-        TEXT("r.DepthOfFieldQuality 4"));
-    PC->ConsoleCommand(DOFCommand);
+    // Apply DOF via console commands
+    PC->ConsoleCommand(TEXT("r.DepthOfFieldQuality 4"));
     
-    // Set DOF parameters via CVar
-    static IConsoleVariable* FstopCVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.DepthOfField.DepthBlurAmount"));
-    
-    // Apply to camera manager's post process
-    FPostProcessSettings& PPSettings = PC->PlayerCameraManager->PostProcessSettings;
-    
-    // Enable Cinematic DOF
-    PPSettings.bOverride_DepthOfFieldFstop = true;
-    PPSettings.DepthOfFieldFstop = Aperture;
-    PPSettings.bOverride_DepthOfFieldFocalDistance = true;
-    PPSettings.DepthOfFieldFocalDistance = FocusDistance;
-    PPSettings.bOverride_DepthOfFieldSensorWidth = true;
-    PPSettings.DepthOfFieldSensorWidth = 36.0f;
-    PPSettings.bOverride_DepthOfFieldMinFstop = true;
-    PPSettings.DepthOfFieldMinFstop = 1.2f;
-    PPSettings.bOverride_DepthOfFieldBladeCount = true;
-    PPSettings.DepthOfFieldBladeCount = 7;
-    
-    // Enable post process blend
-    PC->PlayerCameraManager->PostProcessBlendWeight = 1.0f;
+    // Apply DOF settings to camera component on pawn
+    if (APawn* Pawn = PC->GetPawn())
+    {
+        UCameraComponent* CamComp = Pawn->FindComponentByClass<UCameraComponent>();
+        if (CamComp)
+        {
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldFstop = true;
+            CamComp->PostProcessSettings.DepthOfFieldFstop = Aperture;
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldFocalDistance = true;
+            CamComp->PostProcessSettings.DepthOfFieldFocalDistance = FocusDistance;
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldSensorWidth = true;
+            CamComp->PostProcessSettings.DepthOfFieldSensorWidth = 36.0f;
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldMinFstop = true;
+            CamComp->PostProcessSettings.DepthOfFieldMinFstop = 1.2f;
+            CamComp->PostProcessSettings.bOverride_DepthOfFieldBladeCount = true;
+            CamComp->PostProcessSettings.DepthOfFieldBladeCount = 7;
+            CamComp->PostProcessBlendWeight = 1.0f;
+        }
+    }
 }
 
 FReply UPhotoCaptureWidget::OnToggleClicked()
