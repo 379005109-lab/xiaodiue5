@@ -118,14 +118,11 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create the photo capture widget (top-right, 85% from left, 3% from top)
+    // Create the photo capture widget (hidden - now integrated into MediaControl)
     PhotoCapture = CreateWidget<UPhotoCaptureWidget>(PC, UPhotoCaptureWidget::StaticClass());
     if (PhotoCapture)
     {
-        PhotoCapture->AddToViewport(8);
-        float PosX = ViewportSize.X * 0.82f;
-        float PosY = ViewportSize.Y * 0.03f;
-        PhotoCapture->SetPositionInViewport(FVector2D(PosX, PosY));
+        // Don't add to viewport - now handled by MediaControl
         PhotoCapture->InitWidget();
         
         // Set reference to viewpoint control for batch capture
@@ -178,6 +175,8 @@ void AViewerHUD::SetupUI()
         MediaControl->OnSetStartFrame.AddDynamic(this, &AViewerHUD::OnSetStartFrame);
         MediaControl->OnSetEndFrame.AddDynamic(this, &AViewerHUD::OnSetEndFrame);
         MediaControl->OnTimelineScrub.AddDynamic(this, &AViewerHUD::OnTimelineScrub);
+        MediaControl->OnOpenFolder.AddDynamic(this, &AViewerHUD::OnOpenFolder);
+        MediaControl->OnResetCamera.AddDynamic(this, &AViewerHUD::OnResetCamera);
     }
     
     // Set input mode to allow UI interaction while keeping game input
@@ -544,6 +543,37 @@ void AViewerHUD::OnTimelineScrub(float TimePosition)
 void AViewerHUD::OnVideoExport()
 {
     ExportVideoSequence();
+}
+
+void AViewerHUD::OnOpenFolder()
+{
+    // Open screenshots folder
+    FString ScreenshotsPath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
+    IFileManager::Get().MakeDirectory(*ScreenshotsPath, true);
+    
+    FPlatformProcess::ExploreFolder(*ScreenshotsPath);
+    UE_LOG(LogTemp, Log, TEXT("Opening folder: %s"), *ScreenshotsPath);
+}
+
+void AViewerHUD::OnResetCamera()
+{
+    // Reset camera to initial state
+    APlayerController* PC = GetOwningPlayerController();
+    if (PC)
+    {
+        AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
+        if (ViewerPawn)
+        {
+            ViewerPawn->SetActorLocation(ViewerPawn->InitialLocation);
+            PC->SetControlRotation(ViewerPawn->InitialRotation);
+            ViewerPawn->CurrentFocalLength = ViewerPawn->InitialFocalLength;
+            ViewerPawn->CurrentAperture = ViewerPawn->InitialAperture;
+            ViewerPawn->CurrentFocusDistance = ViewerPawn->InitialFocusDistance;
+            ViewerPawn->ApplyCameraSettings();
+            
+            UE_LOG(LogTemp, Log, TEXT("Camera reset to initial state"));
+        }
+    }
 }
 
 void AViewerHUD::ExportVideoSequence()

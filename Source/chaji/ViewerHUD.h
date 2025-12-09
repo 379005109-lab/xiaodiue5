@@ -107,6 +107,12 @@ private:
     UFUNCTION()
     void OnTimelineScrub(float TimePosition);
     
+    UFUNCTION()
+    void OnOpenFolder();
+    
+    UFUNCTION()
+    void OnResetCamera();
+    
     void PlayVideoClip(int32 ClipIndex);
     void UpdateVideoPlayback(float DeltaTime);
     void ExportVideoSequence();

@@ -22,6 +22,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVideoExport);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSetStartFrame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSetEndFrame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimelineScrub, float, TimePosition);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnOpenFolder);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnResetCamera);
 
 UCLASS()
 class UMediaControlWidget : public UUserWidget
@@ -70,6 +72,12 @@ public:
     
     UPROPERTY(BlueprintAssignable)
     FOnTimelineScrub OnTimelineScrub;
+    
+    UPROPERTY(BlueprintAssignable)
+    FOnOpenFolder OnOpenFolder;
+    
+    UPROPERTY(BlueprintAssignable)
+    FOnResetCamera OnResetCamera;
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;

@@ -82,7 +82,7 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                 .Padding(FMargin(10.0f))
                 [
                     SNew(SVerticalBox)
-                    // 快门按钮行
+                    // 快门按钮 + 打开文件夹 + 恢复默认
                     + SVerticalBox::Slot()
                     .AutoHeight()
                     [
@@ -93,11 +93,47 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                             SNew(SButton)
                             .ButtonColorAndOpacity(FLinearColor(0.2f, 0.5f, 0.8f, 1.0f))
                             .OnClicked_Lambda([this]() { return OnShutterClicked(); })
-                            .ContentPadding(FMargin(20.0f, 8.0f))
+                            .ContentPadding(FMargin(15.0f, 6.0f))
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("📷 快门")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 11))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity(FLinearColor(0.3f, 0.4f, 0.3f, 1.0f))
+                            .OnClicked_Lambda([this]() { 
+                                OnOpenFolder.Broadcast();
+                                return FReply::Handled(); 
+                            })
+                            .ContentPadding(FMargin(10.0f, 6.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("📁 文件夹")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity(FLinearColor(0.4f, 0.3f, 0.3f, 1.0f))
+                            .OnClicked_Lambda([this]() { 
+                                OnResetCamera.Broadcast();
+                                return FReply::Handled(); 
+                            })
+                            .ContentPadding(FMargin(10.0f, 6.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("恢复默认")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
@@ -105,25 +141,29 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                     // 分辨率选择
                     + SVerticalBox::Slot()
                     .AutoHeight()
-                    .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(0.0f, 6.0f, 0.0f, 0.0f))
                     [
                         SNew(SHorizontalBox)
                         + SHorizontalBox::Slot()
                         .AutoWidth()
                         .VAlign(VAlign_Center)
                         [
-                            SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("分辨率: ")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                            .ColorAndOpacity(FLinearColor::White)
+                            SNew(SBox)
+                            .WidthOverride(55.0f)
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("分辨率")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
+                            ]
                         ]
                         + SHorizontalBox::Slot()
                         .AutoWidth()
                         [
                             SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
                             .OnClicked_Lambda([this]() { ResolutionIndex = 0; return FReply::Handled(); })
-                            .ContentPadding(FMargin(8.0f, 4.0f))
+                            .ContentPadding(FMargin(8.0f, 3.0f))
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("1K")))
@@ -133,12 +173,12 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                         ]
                         + SHorizontalBox::Slot()
                         .AutoWidth()
-                        .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
                         [
                             SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
                             .OnClicked_Lambda([this]() { ResolutionIndex = 1; return FReply::Handled(); })
-                            .ContentPadding(FMargin(8.0f, 4.0f))
+                            .ContentPadding(FMargin(8.0f, 3.0f))
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("2K")))
@@ -148,16 +188,95 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                         ]
                         + SHorizontalBox::Slot()
                         .AutoWidth()
-                        .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
                         [
                             SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
                             .OnClicked_Lambda([this]() { ResolutionIndex = 2; return FReply::Handled(); })
-                            .ContentPadding(FMargin(8.0f, 4.0f))
+                            .ContentPadding(FMargin(8.0f, 3.0f))
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(TEXT("4K")))
                                 .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                    ]
+                    // 比例选择
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 4.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(SBox)
+                            .WidthOverride(55.0f)
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("比例")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                                .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
+                            .OnClicked_Lambda([this]() { AspectRatioIndex = 0; return FReply::Handled(); })
+                            .ContentPadding(FMargin(6.0f, 3.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("16:9")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
+                            .OnClicked_Lambda([this]() { AspectRatioIndex = 1; return FReply::Handled(); })
+                            .ContentPadding(FMargin(6.0f, 3.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("9:16")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
+                            .OnClicked_Lambda([this]() { AspectRatioIndex = 2; return FReply::Handled(); })
+                            .ContentPadding(FMargin(6.0f, 3.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("1:1")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 3 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
+                            .OnClicked_Lambda([this]() { AspectRatioIndex = 3; return FReply::Handled(); })
+                            .ContentPadding(FMargin(6.0f, 3.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("3:2")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
@@ -273,64 +392,69 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                             .ColorAndOpacity(FLinearColor(0.3f, 0.8f, 1.0f))
                         ]
                     ]
-                    // 时间刻度线
+                    // 时间刻度线 (剪映风格)
                     + SVerticalBox::Slot()
                     .AutoHeight()
                     .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
                     [
                         SNew(SBox)
-                        .WidthOverride(600.0f)
-                        .HeightOverride(25.0f)
+                        .WidthOverride(700.0f)
+                        .HeightOverride(22.0f)
                         [
                             SNew(SBorder)
-                            .BorderBackgroundColor(FLinearColor(0.18f, 0.18f, 0.2f, 1.0f))
-                            .Padding(FMargin(5.0f, 3.0f))
+                            .BorderBackgroundColor(FLinearColor(0.12f, 0.12f, 0.14f, 1.0f))
+                            .Padding(FMargin(0.0f))
                             [
-                                SNew(SOverlay)
-                                // 刻度标记
-                                + SOverlay::Slot()
+                                SNew(SHorizontalBox)
+                                + SHorizontalBox::Slot()
+                                .FillWidth(1.0f)
                                 [
-                                    SNew(SHorizontalBox)
-                                    + SHorizontalBox::Slot()
-                                    .FillWidth(1.0f)
-                                    [
-                                        SNew(STextBlock)
-                                        .Text(FText::FromString(TEXT("0s     5s     10s    15s    20s    25s    30s    35s    40s    45s    50s    55s    60s")))
-                                        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
-                                        .ColorAndOpacity(FLinearColor(0.6f, 0.6f, 0.6f))
-                                    ]
+                                    SNew(STextBlock)
+                                    .Text(FText::FromString(TEXT("00:00   |   00:02   |   00:04   |   00:06   |   00:08   |   00:10   |   00:12   |   00:14   |   00:16   |   00:18   |   00:20")))
+                                    .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
+                                    .ColorAndOpacity(FLinearColor(0.55f, 0.55f, 0.55f))
                                 ]
                             ]
                         ]
                     ]
-                    // 时间滑块/光标
+                    // 时间轴光标区域
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    [
+                        SNew(SBox)
+                        .WidthOverride(700.0f)
+                        .HeightOverride(16.0f)
+                        [
+                            SNew(SOverlay)
+                            // 滑块背景
+                            + SOverlay::Slot()
+                            [
+                                SNew(SBorder)
+                                .BorderBackgroundColor(FLinearColor(0.08f, 0.08f, 0.1f, 1.0f))
+                            ]
+                            // 滑块
+                            + SOverlay::Slot()
+                            [
+                                SAssignNew(TimelineSlider, SSlider)
+                                .Value_Lambda([this]() { return TotalDuration > 0 ? TimelinePosition / TotalDuration : 0.0f; })
+                                .OnValueChanged_Lambda([this](float NewValue) { OnTimelineValueChanged(NewValue); })
+                                .SliderBarColor(FLinearColor(0.15f, 0.15f, 0.18f))
+                                .SliderHandleColor(FLinearColor(1.0f, 1.0f, 1.0f))
+                            ]
+                        ]
+                    ]
+                    // 视频轨道 (与时间轴对齐)
                     + SVerticalBox::Slot()
                     .AutoHeight()
                     .Padding(FMargin(0.0f, 2.0f, 0.0f, 0.0f))
                     [
                         SNew(SBox)
-                        .WidthOverride(600.0f)
-                        .HeightOverride(20.0f)
-                        [
-                            SAssignNew(TimelineSlider, SSlider)
-                            .Value_Lambda([this]() { return TotalDuration > 0 ? TimelinePosition / TotalDuration : 0.0f; })
-                            .OnValueChanged_Lambda([this](float NewValue) { OnTimelineValueChanged(NewValue); })
-                            .SliderBarColor(FLinearColor(0.3f, 0.3f, 0.35f))
-                            .SliderHandleColor(FLinearColor(1.0f, 0.4f, 0.2f))
-                        ]
-                    ]
-                    // 视频轨道
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 5.0f, 0.0f, 0.0f))
-                    [
-                        SNew(SBox)
-                        .WidthOverride(600.0f)
-                        .HeightOverride(80.0f)
+                        .WidthOverride(700.0f)
+                        .HeightOverride(70.0f)
                         [
                             SNew(SBorder)
-                            .BorderBackgroundColor(FLinearColor(0.12f, 0.12f, 0.15f, 1.0f))
-                            .Padding(FMargin(5.0f))
+                            .BorderBackgroundColor(FLinearColor(0.06f, 0.12f, 0.14f, 1.0f))
+                            .Padding(FMargin(0.0f))
                             [
                                 SNew(SScrollBox)
                                 .Orientation(Orient_Horizontal)
@@ -566,21 +690,28 @@ void UMediaControlWidget::RebuildVideoClips()
     
     ClipTrackContainer->ClearChildren();
     
+    // 计算每秒对应的像素宽度 (700px / 20s = 35px/s)
+    const float PixelsPerSecond = 35.0f;
+    
     for (int32 i = 0; i < VideoClips.Num(); i++)
     {
         const FVideoClipData& Clip = VideoClips[i];
         bool bIsSelected = (i == CurrentClipIndex);
         
-        // 选中高亮颜色
-        FLinearColor BorderColor = bIsSelected ? FLinearColor(0.0f, 0.7f, 1.0f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f);
-        FLinearColor BgColor = bIsSelected ? FLinearColor(0.15f, 0.2f, 0.25f, 1.0f) : FLinearColor(0.1f, 0.1f, 0.12f, 1.0f);
+        // 片段宽度与时长成比例
+        float ClipWidth = Clip.Duration * PixelsPerSecond;
+        ClipWidth = FMath::Max(ClipWidth, 80.0f); // 最小宽度
+        
+        // 选中高亮颜色 - 剪映风格青色
+        FLinearColor BorderColor = bIsSelected ? FLinearColor(0.0f, 0.8f, 0.9f, 1.0f) : FLinearColor(0.2f, 0.2f, 0.2f, 0.5f);
+        FLinearColor BgColor = bIsSelected ? FLinearColor(0.0f, 0.25f, 0.3f, 1.0f) : FLinearColor(0.0f, 0.18f, 0.22f, 1.0f);
         
         ClipTrackContainer->AddSlot()
         .AutoWidth()
-        .Padding(FMargin(0.0f, 0.0f, 4.0f, 0.0f))
+        .Padding(FMargin(0.0f, 0.0f, 2.0f, 0.0f))
         [
             SNew(SBox)
-            .WidthOverride(130.0f)
+            .WidthOverride(ClipWidth)
             [
                 SNew(SBorder)
                 .BorderBackgroundColor(BorderColor)
