@@ -8,6 +8,20 @@
 class AViewpointPreviewManager;
 class UTextureRenderTarget2D;
 
+// Viewpoint camera data structure
+USTRUCT(BlueprintType)
+struct FViewpointData
+{
+    GENERATED_BODY()
+    
+    FVector Location = FVector::ZeroVector;
+    FRotator Rotation = FRotator::ZeroRotator;
+    float FocalLength = 35.0f;
+    float Aperture = 2.8f;
+    float FocusDistance = 1000.0f;
+    bool bHasData = false;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnViewpointChanged, int32, ViewpointIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnViewpointAdded);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnViewpointRemoved);
@@ -42,6 +56,11 @@ public:
     
     // Get selected viewpoints for batch capture
     TArray<int32> GetSelectedViewpoints() const;
+    
+    // Viewpoint data management
+    void SaveViewpointData(int32 Index, const FViewpointData& Data);
+    FViewpointData GetViewpointData(int32 Index) const;
+    bool HasViewpointData(int32 Index) const;
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -60,6 +79,9 @@ private:
     
     // Checkbox selections
     TArray<bool> ViewpointSelected;
+    
+    // Viewpoint saved data
+    TArray<FViewpointData> ViewpointDataArray;
 
     void RebuildThumbnails();
     void UpdateVisibility();

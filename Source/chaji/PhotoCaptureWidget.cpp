@@ -1,5 +1,6 @@
 // PhotoCaptureWidget.cpp
 #include "PhotoCaptureWidget.h"
+#include "ViewpointControlWidget.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SSlider.h"
@@ -501,8 +502,65 @@ FReply UPhotoCaptureWidget::OnResolution4K()
 
 FReply UPhotoCaptureWidget::OnShutterClicked()
 {
-    // Quick capture - same as capture but with notification
+    // Check if there are selected viewpoints for batch capture
+    if (ViewpointControlRef)
+    {
+        TArray<int32> Selected = ViewpointControlRef->GetSelectedViewpoints();
+        if (Selected.Num() > 0)
+        {
+            // Batch capture for selected viewpoints
+            CaptureMultiple(Selected);
+            return FReply::Handled();
+        }
+    }
+    
+    // Single capture if no selection
     return OnCaptureClicked();
+}
+
+void UPhotoCaptureWidget::CaptureMultiple(const TArray<int32>& Indices)
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (!PC) return;
+    
+    int32 Width = 1920;
+    int32 Height = 1080;
+    FString ResName = TEXT("1K");
+    
+    switch (ResolutionIndex)
+    {
+        case 0: Width = 1920; Height = 1080; ResName = TEXT("1K"); break;
+        case 1: Width = 2560; Height = 1440; ResName = TEXT("2K"); break;
+        case 2: Width = 3840; Height = 2160; ResName = TEXT("4K"); break;
+    }
+    
+    // Capture for each selected viewpoint
+    for (int32 i = 0; i < Indices.Num(); i++)
+    {
+        int32 ViewpointIndex = Indices[i];
+        
+        // Use delayed capture with timer to allow camera to move
+        FTimerHandle TimerHandle;
+        FTimerDelegate TimerDelegate;
+        TimerDelegate.BindLambda([this, PC, Width, Height, ViewpointIndex, i]()
+        {
+            FString Command = FString::Printf(TEXT("HighResShot %dx%d"), Width, Height);
+            PC->ConsoleCommand(Command);
+            UE_LOG(LogTemp, Log, TEXT("Captured viewpoint %d"), ViewpointIndex);
+        });
+        
+        // Delay each capture slightly to avoid conflicts
+        GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegate, 0.5f * i, false);
+    }
+    
+    // Save path for opening folder
+    LastSavePath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
+    
+    // Update status
+    if (StatusText.IsValid())
+    {
+        StatusText->SetText(FText::FromString(FString::Printf(TEXT("正在批量截图 %d 张 (%s)..."), Indices.Num(), *ResName)));
+    }
 }
 
 FReply UPhotoCaptureWidget::OnSaveViewpointClicked()

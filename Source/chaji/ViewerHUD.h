@@ -59,5 +59,10 @@ private:
     void OnViewpointChanged(int32 Index);
     
     UFUNCTION()
+    void OnViewpointSaved(int32 Index);
+    
+    UFUNCTION()
     void OnMouseWheel(float Delta);
+    
+    void PerformBatchCapture();
 };

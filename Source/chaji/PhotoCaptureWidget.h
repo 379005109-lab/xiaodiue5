@@ -18,15 +18,21 @@ public:
     UFUNCTION(BlueprintCallable)
     void LoadCameraSettings(float InFocalLength, float InAperture, float InFocusDistance);
     
+    // Getters for camera parameters
+    float GetFocalLength() const { return FocalLength; }
+    float GetAperture() const { return Aperture; }
+    float GetFocusDistance() const { return FocusDistance; }
+    
+    // Get selected viewpoints from ViewpointControl
+    void SetViewpointControlRef(class UViewpointControlWidget* Ref) { ViewpointControlRef = Ref; }
+    
+    // Batch capture support
+    void CaptureMultiple(const TArray<int32>& Indices);
+    
     // Called from PlayerController for scroll wheel shortcuts
     void AdjustFocalLength(float Delta);
     void AdjustAperture(float Delta);
     void AdjustFocusDistance(float Delta);
-    
-    // Get current values for display
-    float GetFocalLength() const { return FocalLength; }
-    float GetAperture() const { return Aperture; }
-    float GetFocusDistance() const { return FocusDistance; }
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -74,4 +80,7 @@ private:
     void OnFocusDistanceChanged(float Value);
     
     FString LastSavePath;
+    
+    UPROPERTY()
+    class UViewpointControlWidget* ViewpointControlRef = nullptr;
 };

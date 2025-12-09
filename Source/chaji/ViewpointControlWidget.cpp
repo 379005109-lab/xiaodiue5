@@ -116,6 +116,9 @@ void UViewpointControlWidget::SetViewpointCount(int32 Count)
         ViewpointSelected[i] = false;
     }
     
+    // Initialize viewpoint data array
+    ViewpointDataArray.SetNum(Count);
+    
     RebuildThumbnails();
 }
 
@@ -349,4 +352,30 @@ TArray<int32> UViewpointControlWidget::GetSelectedViewpoints() const
         }
     }
     return Selected;
+}
+
+void UViewpointControlWidget::SaveViewpointData(int32 Index, const FViewpointData& Data)
+{
+    if (ViewpointDataArray.IsValidIndex(Index))
+    {
+        ViewpointDataArray[Index] = Data;
+        ViewpointDataArray[Index].bHasData = true;
+        RebuildThumbnails();
+        UE_LOG(LogTemp, Log, TEXT("Viewpoint %d saved: Loc=%s Rot=%s Focal=%.0f"), 
+            Index, *Data.Location.ToString(), *Data.Rotation.ToString(), Data.FocalLength);
+    }
+}
+
+FViewpointData UViewpointControlWidget::GetViewpointData(int32 Index) const
+{
+    if (ViewpointDataArray.IsValidIndex(Index))
+    {
+        return ViewpointDataArray[Index];
+    }
+    return FViewpointData();
+}
+
+bool UViewpointControlWidget::HasViewpointData(int32 Index) const
+{
+    return ViewpointDataArray.IsValidIndex(Index) && ViewpointDataArray[Index].bHasData;
 }

@@ -183,14 +183,10 @@ void AViewerPawn::OnMouseScrollDown()
 
 void AViewerPawn::OnResetShortcut()
 {
-    APlayerController* PC = Cast<APlayerController>(GetController());
-    if (!PC) return;
-    
-    // Only reset when Ctrl is held (Ctrl+Esc)
-    bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
-    if (bCtrl && PhotoCaptureRef)
+    // Reset camera settings when Escape is pressed (Ctrl+Esc or just Esc)
+    if (PhotoCaptureRef)
     {
         PhotoCaptureRef->LoadCameraSettings(35.0f, 2.8f, 1000.0f);
-        UE_LOG(LogTemp, Log, TEXT("Camera settings reset to default (Ctrl+Esc)"));
+        UE_LOG(LogTemp, Log, TEXT("Camera settings reset to default"));
     }
 }

@@ -107,6 +107,7 @@ void AViewerHUD::SetupUI()
         
         // Bind viewpoint change event
         ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
+        ViewpointControl->OnViewpointSaved.AddDynamic(this, &AViewerHUD::OnViewpointSaved);
         
         // Set initial viewpoint count
         if (CameraController && CameraController->Categories.Num() > 0)
@@ -124,6 +125,12 @@ void AViewerHUD::SetupUI()
         float PosY = ViewportSize.Y * 0.03f;
         PhotoCapture->SetPositionInViewport(FVector2D(PosX, PosY));
         PhotoCapture->InitWidget();
+        
+        // Set reference to viewpoint control for batch capture
+        if (ViewpointControl)
+        {
+            PhotoCapture->SetViewpointControlRef(ViewpointControl);
+        }
         
         // Set reference to pawn for shortcuts
         AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
@@ -191,17 +198,62 @@ void AViewerHUD::SetupPreviewsForCategory(int32 CategoryIndex)
 
 void AViewerHUD::OnViewpointChanged(int32 Index)
 {
-    if (CameraController)
+    if (!ViewpointControl) return;
+    
+    // Check if this viewpoint has saved data
+    if (ViewpointControl->HasViewpointData(Index))
     {
+        // Load saved viewpoint data
+        FViewpointData Data = ViewpointControl->GetViewpointData(Index);
+        
+        // Apply camera position and settings
+        APlayerController* PC = GetOwningPlayerController();
+        if (PC && PC->GetPawn())
+        {
+            PC->GetPawn()->SetActorLocation(Data.Location);
+            PC->SetControlRotation(Data.Rotation);
+        }
+        
+        if (PhotoCapture)
+        {
+            PhotoCapture->LoadCameraSettings(Data.FocalLength, Data.Aperture, Data.FocusDistance);
+        }
+        
+        UE_LOG(LogTemp, Log, TEXT("Loaded viewpoint %d data"), Index);
+    }
+    else if (CameraController)
+    {
+        // Use default viewpoint from controller
         CameraController->SetViewpoint(Index);
         
-        // Load camera settings for this viewpoint
         if (PhotoCapture)
         {
             FCameraSettings Settings = CameraController->GetCurrentCameraSettings();
             PhotoCapture->LoadCameraSettings(Settings.FocalLength, Settings.Aperture, Settings.FocusDistance);
         }
     }
+}
+
+void AViewerHUD::OnViewpointSaved(int32 Index)
+{
+    if (!ViewpointControl || !PhotoCapture) return;
+    
+    APlayerController* PC = GetOwningPlayerController();
+    if (!PC || !PC->GetPawn()) return;
+    
+    // Capture current camera state
+    FViewpointData Data;
+    Data.Location = PC->GetPawn()->GetActorLocation();
+    Data.Rotation = PC->GetControlRotation();
+    Data.FocalLength = PhotoCapture->GetFocalLength();
+    Data.Aperture = PhotoCapture->GetAperture();
+    Data.FocusDistance = PhotoCapture->GetFocusDistance();
+    Data.bHasData = true;
+    
+    // Save to viewpoint control
+    ViewpointControl->SaveViewpointData(Index, Data);
+    
+    UE_LOG(LogTemp, Log, TEXT("Saved viewpoint %d: Loc=%s"), Index, *Data.Location.ToString());
 }
 
 void AViewerHUD::Tick(float DeltaTime)
