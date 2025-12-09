@@ -219,6 +219,15 @@ void UPhotoCaptureWidget::InitWidget()
     ApplyAllCameraSettings();
 }
 
+void UPhotoCaptureWidget::LoadCameraSettings(float InFocalLength, float InAperture, float InFocusDistance)
+{
+    FocalLength = InFocalLength;
+    Aperture = InAperture;
+    FocusDistance = InFocusDistance;
+    UpdateParameterDisplay();
+    ApplyAllCameraSettings();
+}
+
 void UPhotoCaptureWidget::UpdateParameterDisplay()
 {
     if (FocalLengthText.IsValid())

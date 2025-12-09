@@ -161,6 +161,13 @@ void AViewerHUD::OnViewpointChanged(int32 Index)
     if (CameraController)
     {
         CameraController->SetViewpoint(Index);
+        
+        // Load camera settings for this viewpoint
+        if (PhotoCapture)
+        {
+            FCameraSettings Settings = CameraController->GetCurrentCameraSettings();
+            PhotoCapture->LoadCameraSettings(Settings.FocalLength, Settings.Aperture, Settings.FocusDistance);
+        }
     }
 }
 
@@ -177,43 +184,53 @@ void AViewerHUD::HandleGlobalInput()
     APlayerController* PC = GetOwningPlayerController();
     if (!PC) return;
     
+    float DeltaTime = GetWorld()->GetDeltaSeconds();
+    
     // Check modifier keys
     bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
     bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
     bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
     
-    // Handle keyboard shortcuts: Q/E for focal length, A/D for aperture, Z/C for focus
-    if (bCtrl)
+    // Check if Q or E is held
+    bool bQHeld = PC->IsInputKeyDown(EKeys::Q);
+    bool bEHeld = PC->IsInputKeyDown(EKeys::E);
+    bool bHoldingKey = (bCtrl || bShift || bAlt) && (bQHeld || bEHeld);
+    
+    if (bHoldingKey)
     {
-        if (PC->WasInputKeyJustPressed(EKeys::Q))
+        // Increase hold time and acceleration
+        KeyHoldTime += DeltaTime;
+        KeyHoldAcceleration = FMath::Min(KeyHoldAcceleration + DeltaTime * 2.0f, 10.0f);
+        
+        // Calculate adjustment amount with acceleration
+        float Direction = bEHeld ? 1.0f : -1.0f;
+        
+        if (bCtrl)
         {
-            PhotoCapture->AdjustFocalLength(-5.0f);
+            // Focal length: 5mm per tick, accelerating
+            PhotoCapture->AdjustFocalLength(Direction * 5.0f * KeyHoldAcceleration * DeltaTime * 10.0f);
         }
-        else if (PC->WasInputKeyJustPressed(EKeys::E))
+        else if (bShift)
         {
-            PhotoCapture->AdjustFocalLength(5.0f);
+            // Aperture: 0.5 per tick, accelerating
+            PhotoCapture->AdjustAperture(Direction * 0.5f * KeyHoldAcceleration * DeltaTime * 10.0f);
         }
+        else if (bAlt)
+        {
+            // Focus distance: 100cm per tick, accelerating
+            PhotoCapture->AdjustFocusDistance(Direction * 100.0f * KeyHoldAcceleration * DeltaTime * 10.0f);
+        }
+        
+        bWasHoldingKey = true;
     }
-    else if (bShift)
+    else
     {
-        if (PC->WasInputKeyJustPressed(EKeys::Q))
+        // Reset acceleration when key released
+        if (bWasHoldingKey)
         {
-            PhotoCapture->AdjustAperture(-0.5f);
-        }
-        else if (PC->WasInputKeyJustPressed(EKeys::E))
-        {
-            PhotoCapture->AdjustAperture(0.5f);
-        }
-    }
-    else if (bAlt)
-    {
-        if (PC->WasInputKeyJustPressed(EKeys::Q))
-        {
-            PhotoCapture->AdjustFocusDistance(-100.0f);
-        }
-        else if (PC->WasInputKeyJustPressed(EKeys::E))
-        {
-            PhotoCapture->AdjustFocusDistance(100.0f);
+            KeyHoldTime = 0.0f;
+            KeyHoldAcceleration = 1.0f;
+            bWasHoldingKey = false;
         }
     }
 }

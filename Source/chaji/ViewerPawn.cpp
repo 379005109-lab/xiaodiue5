@@ -5,23 +5,19 @@
 
 AViewerPawn::AViewerPawn()
 {
-    // Disable default movement
-    bAddDefaultMovementBindings = false;
+    // Keep default movement bindings but we'll override crouch
+    bAddDefaultMovementBindings = true;
 }
 
 void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-    // Don't call Super - this removes all default bindings including Crouch
-    // Only bind what we need
+    // Call parent to get all default bindings
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
     
-    check(PlayerInputComponent);
+    // Remove MoveUp binding to prevent Ctrl from descending
+    // The default pawn binds Ctrl to MoveUp with negative value
+    PlayerInputComponent->RemoveAxisBinding("MoveUp");
     
-    // Bind basic movement (WASD)
-    PlayerInputComponent->BindAxis("MoveForward", this, &ADefaultPawn::MoveForward);
-    PlayerInputComponent->BindAxis("MoveRight", this, &ADefaultPawn::MoveRight);
+    // Re-bind MoveUp only to Space (up) - no down binding
     PlayerInputComponent->BindAxis("MoveUp", this, &ADefaultPawn::MoveUp_World);
-    PlayerInputComponent->BindAxis("Turn", this, &ADefaultPawn::AddControllerYawInput);
-    PlayerInputComponent->BindAxis("LookUp", this, &ADefaultPawn::AddControllerPitchInput);
-    
-    // No Crouch binding here - Ctrl will not cause descent
 }

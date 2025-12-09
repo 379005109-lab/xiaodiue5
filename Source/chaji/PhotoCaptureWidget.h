@@ -14,6 +14,10 @@ public:
     UFUNCTION(BlueprintCallable)
     void InitWidget();
     
+    // Load settings from camera
+    UFUNCTION(BlueprintCallable)
+    void LoadCameraSettings(float InFocalLength, float InAperture, float InFocusDistance);
+    
     // Called from PlayerController for scroll wheel shortcuts
     void AdjustFocalLength(float Delta);
     void AdjustAperture(float Delta);

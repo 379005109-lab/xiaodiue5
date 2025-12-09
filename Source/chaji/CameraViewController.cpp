@@ -3,6 +3,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
+#include "CineCameraActor.h"
+#include "CineCameraComponent.h"
 
 ACameraViewController::ACameraViewController()
 {
@@ -64,6 +66,19 @@ TArray<FString> ACameraViewController::GetCategoryNames()
     return Names;
 }
 
+FCameraSettings ACameraViewController::GetCurrentCameraSettings() const
+{
+    if (Categories.IsValidIndex(CurrentCategoryIndex))
+    {
+        const FCategoryViewpoint& Category = Categories[CurrentCategoryIndex];
+        if (Category.CameraSettings.IsValidIndex(CurrentViewpointIndex))
+        {
+            return Category.CameraSettings[CurrentViewpointIndex];
+        }
+    }
+    return FCameraSettings();
+}
+
 void ACameraViewController::MoveToCurrentViewpoint()
 {
     if (Categories.Num() == 0) return;
@@ -107,8 +122,8 @@ void ACameraViewController::AutoConfigureFromCineCameras()
         }
     }
     
-    // 临时存储
-    TMap<FString, TArray<FTransform>> TempGroups;
+    // 临时存储 - 包含相机设置
+    TMap<FString, TArray<FCameraSettings>> TempGroups;
     
     for (AActor* Actor : CameraActors)
     {
@@ -122,9 +137,31 @@ void ACameraViewController::AutoConfigureFromCineCameras()
             
             if (!TempGroups.Contains(OriginalCategory))
             {
-                TempGroups.Add(OriginalCategory, TArray<FTransform>());
+                TempGroups.Add(OriginalCategory, TArray<FCameraSettings>());
             }
-            TempGroups[OriginalCategory].Add(Actor->GetActorTransform());
+            
+            // 创建相机设置
+            FCameraSettings Settings;
+            Settings.Transform = Actor->GetActorTransform();
+            
+            // 尝试获取 CineCamera 参数
+            ACineCameraActor* CineCamera = Cast<ACineCameraActor>(Actor);
+            if (CineCamera)
+            {
+                UCineCameraComponent* CineCamComp = CineCamera->GetCineCameraComponent();
+                if (CineCamComp)
+                {
+                    Settings.FocalLength = CineCamComp->CurrentFocalLength;
+                    Settings.Aperture = CineCamComp->CurrentAperture;
+                    Settings.FocusDistance = CineCamComp->FocusSettings.ManualFocusDistance;
+                    Settings.SensorWidth = CineCamComp->Filmback.SensorWidth;
+                    Settings.SensorHeight = CineCamComp->Filmback.SensorHeight;
+                    Settings.MinFstop = CineCamComp->LensSettings.MinFStop;
+                    Settings.BladeCount = CineCamComp->LensSettings.DiaphragmBladeCount;
+                }
+            }
+            
+            TempGroups[OriginalCategory].Add(Settings);
         }
     }
     
@@ -144,7 +181,11 @@ void ACameraViewController::AutoConfigureFromCineCameras()
             {
                 if (TempGroups.Contains(SubCat))
                 {
-                    NewCategory.Viewpoints.Append(TempGroups[SubCat]);
+                    for (const FCameraSettings& Settings : TempGroups[SubCat])
+                    {
+                        NewCategory.Viewpoints.Add(Settings.Transform);
+                        NewCategory.CameraSettings.Add(Settings);
+                    }
                 }
             }
             
