@@ -16,7 +16,25 @@ public:
     
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     UCameraComponent* CameraComp;
+    
+    virtual void Tick(float DeltaTime) override;
 
 protected:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    
+private:
+    FVector MoveInput = FVector::ZeroVector;
+    
+    void StartMoveForward();
+    void StopMoveForward();
+    void StartMoveBackward();
+    void StopMoveBackward();
+    void StartMoveLeft();
+    void StopMoveLeft();
+    void StartMoveRight();
+    void StopMoveRight();
+    void StartMoveUp();
+    void StopMoveUp();
+    void StartMoveDown();
+    void StopMoveDown();
 };
