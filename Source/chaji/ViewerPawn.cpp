@@ -72,6 +72,9 @@ void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     
     // R key for reset (instead of Esc which exits simulation)
     PlayerInputComponent->BindKey(EKeys::R, IE_Pressed, this, &AViewerPawn::OnResetShortcut);
+    
+    // Save initial state for reset
+    SaveInitialState();
 }
 
 void AViewerPawn::Tick(float DeltaTime)
@@ -152,7 +155,7 @@ void AViewerPawn::OnMouseScrollUp()
     }
     else if (bAlt)
     {
-        PhotoCaptureRef->AdjustFocusDistance(100.0f);
+        PhotoCaptureRef->AdjustFocusDistance(20.0f); // More precise adjustment
     }
 }
 
@@ -177,16 +180,42 @@ void AViewerPawn::OnMouseScrollDown()
     }
     else if (bAlt)
     {
-        PhotoCaptureRef->AdjustFocusDistance(-100.0f);
+        PhotoCaptureRef->AdjustFocusDistance(-20.0f); // More precise adjustment
     }
 }
 
 void AViewerPawn::OnResetShortcut()
 {
-    // Reset camera settings when Escape is pressed (Ctrl+Esc or just Esc)
+    // Reset to initial state (position + camera settings)
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    
+    if (bInitialStateSaved)
+    {
+        // Restore initial position
+        SetActorLocation(InitialLocation);
+        if (PC)
+        {
+            PC->SetControlRotation(InitialRotation);
+        }
+    }
+    
+    // Reset camera settings
     if (PhotoCaptureRef)
     {
         PhotoCaptureRef->LoadCameraSettings(35.0f, 2.8f, 1000.0f);
-        UE_LOG(LogTemp, Log, TEXT("Camera settings reset to default"));
     }
+    
+    UE_LOG(LogTemp, Log, TEXT("Reset to initial state"));
+}
+
+void AViewerPawn::SaveInitialState()
+{
+    InitialLocation = GetActorLocation();
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (PC)
+    {
+        InitialRotation = PC->GetControlRotation();
+    }
+    bInitialStateSaved = true;
+    UE_LOG(LogTemp, Log, TEXT("Saved initial state: %s"), *InitialLocation.ToString());
 }

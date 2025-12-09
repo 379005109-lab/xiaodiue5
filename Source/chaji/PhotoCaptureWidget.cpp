@@ -270,41 +270,21 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                             ]
                         ]
                     ]
-                    // Shutter and Save Viewpoint buttons row
+                    // Shutter button
                     + SVerticalBox::Slot()
                     .AutoHeight()
                     .Padding(FMargin(0.0f, 15.0f, 0.0f, 0.0f))
+                    .HAlign(HAlign_Center)
                     [
-                        SNew(SHorizontalBox)
-                        + SHorizontalBox::Slot()
-                        .FillWidth(1.0f)
-                        .Padding(FMargin(0.0f, 0.0f, 5.0f, 0.0f))
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.2f, 0.4f, 0.8f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnShutterClicked(); })
+                        .ContentPadding(FMargin(40.0f, 12.0f))
                         [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.4f, 0.8f, 1.0f))
-                            .OnClicked_Lambda([this]() { return OnShutterClicked(); })
-                            .ContentPadding(FMargin(15.0f, 10.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("快门")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .FillWidth(1.0f)
-                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.4f, 0.4f, 0.4f, 1.0f))
-                            .OnClicked_Lambda([this]() { return OnSaveViewpointClicked(); })
-                            .ContentPadding(FMargin(15.0f, 10.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("保存视角")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("快门")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
+                            .ColorAndOpacity(FLinearColor::White)
                         ]
                     ]
                     // Status Text
@@ -539,7 +519,14 @@ void UPhotoCaptureWidget::CaptureSingle()
         case 2: Width = 3840; Height = 2160; break;
     }
     
-    FString Command = FString::Printf(TEXT("HighResShot %dx%d"), Width, Height);
+    // Increment counter for naming
+    ScreenshotCounter++;
+    
+    // Create filename with category name: 分类名_1, 分类名_2, etc.
+    FString Filename = FString::Printf(TEXT("%s_%d"), *CurrentCategoryName, ScreenshotCounter);
+    
+    // Use HighResShot with filename
+    FString Command = FString::Printf(TEXT("HighResShot %dx%d filename=%s"), Width, Height, *Filename);
     PC->ConsoleCommand(Command);
     
     LastSavePath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
@@ -604,7 +591,7 @@ void UPhotoCaptureWidget::OnApertureChanged(float Value)
 
 void UPhotoCaptureWidget::OnFocusDistanceChanged(float Value)
 {
-    FocusDistance = 50.0f + Value * 9950.0f; // 50cm to 10000cm
+    FocusDistance = 10.0f + Value * 9990.0f; // 10cm to 10000cm (more precise start)
     UpdateParameterDisplay();
     ApplyAllCameraSettings();
 }
@@ -625,7 +612,7 @@ void UPhotoCaptureWidget::AdjustAperture(float Delta)
 
 void UPhotoCaptureWidget::AdjustFocusDistance(float Delta)
 {
-    FocusDistance = FMath::Clamp(FocusDistance + Delta, 50.0f, 10000.0f);
+    FocusDistance = FMath::Clamp(FocusDistance + Delta, 10.0f, 10000.0f);
     UpdateParameterDisplay();
     ApplyAllCameraSettings();
 }

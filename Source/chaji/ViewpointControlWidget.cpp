@@ -40,17 +40,11 @@ TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
                 .Padding(FMargin(10.0f))
                 [
                     SNew(SHorizontalBox)
-                    // Thumbnails
-                    + SHorizontalBox::Slot()
-                    .AutoWidth()
-                    [
-                        SAssignNew(ThumbnailContainer, SHorizontalBox)
-                    ]
-                    // Add/Remove/SelectAll buttons
+                    // Add/Remove/SelectAll buttons (LEFT SIDE)
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .VAlign(VAlign_Center)
-                    .Padding(FMargin(10.0f, 0.0f, 0.0f, 0.0f))
+                    .Padding(FMargin(0.0f, 0.0f, 10.0f, 0.0f))
                     [
                         SNew(SVerticalBox)
                         + SVerticalBox::Slot()
@@ -98,6 +92,12 @@ TSharedRef<SWidget> UViewpointControlWidget::RebuildWidget()
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
+                    ]
+                    // Thumbnails (RIGHT OF BUTTONS)
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    [
+                        SAssignNew(ThumbnailContainer, SHorizontalBox)
                     ]
                 ]
             ]
@@ -288,24 +288,46 @@ FReply UViewpointControlWidget::OnAddViewpoint()
 
 FReply UViewpointControlWidget::OnRemoveViewpoint()
 {
-    if (ViewpointCount > 1)
+    // Check if any viewpoints are selected
+    TArray<int32> IndicesToRemove;
+    for (int32 i = 0; i < ViewpointSelected.Num(); i++)
     {
-        ViewpointCount--;
-        if (ViewpointSelected.Num() > 0)
+        if (ViewpointSelected[i])
         {
-            ViewpointSelected.Pop();
+            IndicesToRemove.Add(i);
         }
-        if (ViewpointDataArray.Num() > 0)
-        {
-            ViewpointDataArray.Pop();
-        }
-        if (CurrentViewpoint >= ViewpointCount)
-        {
-            CurrentViewpoint = ViewpointCount - 1;
-        }
-        RebuildThumbnails();
-        OnViewpointRemoved.Broadcast();
     }
+    
+    if (IndicesToRemove.Num() > 0)
+    {
+        // Remove selected viewpoints (from end to start to maintain indices)
+        for (int32 i = IndicesToRemove.Num() - 1; i >= 0; i--)
+        {
+            int32 IndexToRemove = IndicesToRemove[i];
+            if (ViewpointCount > 1) // Keep at least 1 viewpoint
+            {
+                ViewpointSelected.RemoveAt(IndexToRemove);
+                ViewpointDataArray.RemoveAt(IndexToRemove);
+                ViewpointCount--;
+            }
+        }
+    }
+    else if (ViewpointCount > 1)
+    {
+        // No selection, remove last viewpoint
+        ViewpointSelected.Pop();
+        ViewpointDataArray.Pop();
+        ViewpointCount--;
+    }
+    
+    // Adjust current viewpoint if needed
+    if (CurrentViewpoint >= ViewpointCount)
+    {
+        CurrentViewpoint = FMath::Max(0, ViewpointCount - 1);
+    }
+    
+    RebuildThumbnails();
+    OnViewpointRemoved.Broadcast();
     return FReply::Handled();
 }
 

@@ -53,11 +53,12 @@ void AViewerHUD::BeginPlay()
     {
         SetupPreviewsForCategory(0);
         
-        // Load initial camera settings
+        // Load initial camera settings and category name
         if (PhotoCapture)
         {
             FCameraSettings Settings = CameraController->GetCurrentCameraSettings();
             PhotoCapture->LoadCameraSettings(Settings.FocalLength, Settings.Aperture, Settings.FocusDistance);
+            PhotoCapture->SetCurrentCategoryName(CameraController->Categories[0].CategoryName);
         }
     }
 }
@@ -175,6 +176,13 @@ void AViewerHUD::OnCategorySelected(int32 Index)
             
             // Setup previews for the new category
             SetupPreviewsForCategory(Index);
+            
+            // Update category name for screenshot naming
+            if (PhotoCapture)
+            {
+                FString CategoryName = CameraController->Categories[Index].CategoryName;
+                PhotoCapture->SetCurrentCategoryName(CategoryName);
+            }
         }
     }
     

@@ -28,6 +28,9 @@ public:
     // Get selected viewpoints from ViewpointControl
     void SetViewpointControlRef(class UViewpointControlWidget* Ref) { ViewpointControlRef = Ref; }
     
+    // Set current category name for screenshot naming
+    void SetCurrentCategoryName(const FString& Name) { CurrentCategoryName = Name; }
+    
     // Batch capture support
     UPROPERTY(BlueprintAssignable)
     FOnBatchCaptureStart OnBatchCaptureStart;
@@ -86,6 +89,8 @@ private:
     void OnFocusDistanceChanged(float Value);
     
     FString LastSavePath;
+    FString CurrentCategoryName = TEXT("镜头");
+    int32 ScreenshotCounter = 0;
     
     UPROPERTY()
     class UViewpointControlWidget* ViewpointControlRef = nullptr;

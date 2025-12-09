@@ -51,4 +51,10 @@ private:
     void OnMouseScrollUp();
     void OnMouseScrollDown();
     void OnResetShortcut();
+    
+    // Store initial position for reset
+    FVector InitialLocation;
+    FRotator InitialRotation;
+    bool bInitialStateSaved = false;
+    void SaveInitialState();
 };
