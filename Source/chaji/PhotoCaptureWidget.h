@@ -22,6 +22,11 @@ public:
     void AdjustFocalLength(float Delta);
     void AdjustAperture(float Delta);
     void AdjustFocusDistance(float Delta);
+    
+    // Get current values for display
+    float GetFocalLength() const { return FocalLength; }
+    float GetAperture() const { return Aperture; }
+    float GetFocusDistance() const { return FocusDistance; }
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -32,6 +37,7 @@ private:
     TSharedPtr<class STextBlock> ApertureText;
     TSharedPtr<class STextBlock> FocusDistanceText;
     TSharedPtr<class STextBlock> StatusText;
+    TSharedPtr<class STextBlock> ResolutionText;
     
     bool bIsExpanded = false;
     
@@ -39,13 +45,25 @@ private:
     float FocalLength = 35.0f;
     float Aperture = 2.8f;
     float FocusDistance = 1000.0f;
-    int32 ScreenshotScale = 4;
+    
+    // Default values for reset
+    float DefaultFocalLength = 35.0f;
+    float DefaultAperture = 2.8f;
+    float DefaultFocusDistance = 1000.0f;
+    
+    // Screenshot resolution: 0=1K, 1=2K, 2=4K
+    int32 ResolutionIndex = 0;
     
     void UpdateParameterDisplay();
     void ApplyAllCameraSettings();
+    void UpdateResolutionText();
     
     FReply OnToggleClicked();
     FReply OnCaptureClicked();
+    FReply OnResetClicked();
+    FReply OnResolution1K();
+    FReply OnResolution2K();
+    FReply OnResolution4K();
     
     void OnFocalLengthChanged(float Value);
     void OnApertureChanged(float Value);

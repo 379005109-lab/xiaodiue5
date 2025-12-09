@@ -133,6 +133,17 @@ void AViewerHUD::SetupUI()
         }
     }
     
+    // Create parameter display widget (top center)
+    ParameterDisplay = CreateWidget<UParameterDisplayWidget>(PC, UParameterDisplayWidget::StaticClass());
+    if (ParameterDisplay)
+    {
+        ParameterDisplay->AddToViewport(10);
+        float PosX = ViewportSize.X * 0.35f;
+        float PosY = ViewportSize.Y * 0.02f;
+        ParameterDisplay->SetPositionInViewport(FVector2D(PosX, PosY));
+        ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
+    }
+    
     // Set input mode to allow UI interaction while keeping game input
     FInputModeGameAndUI InputMode;
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);

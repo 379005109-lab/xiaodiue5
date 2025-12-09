@@ -10,6 +10,7 @@
 #include "ViewpointPreviewManager.h"
 #include "ViewerPlayerController.h"
 #include "ViewerPawn.h"
+#include "ParameterDisplayWidget.h"
 #include "ViewerHUD.generated.h"
 
 UCLASS()
@@ -37,7 +38,10 @@ private:
     
     UPROPERTY()
     UPhotoCaptureWidget* PhotoCapture;
-
+    
+    UPROPERTY()
+    UParameterDisplayWidget* ParameterDisplay;
+    
     UPROPERTY()
     ACameraViewController* CameraController;
     

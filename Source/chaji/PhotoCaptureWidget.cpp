@@ -191,6 +191,84 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                             ]
                         ]
                     ]
+                    // Reset Button
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
+                    .HAlign(HAlign_Center)
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.4f, 0.4f, 0.4f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnResetClicked(); })
+                        .ContentPadding(FMargin(20.0f, 8.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("恢复默认")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // Resolution Selection
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 15.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SHorizontalBox)
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("分辨率：")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(10.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnResolution1K(); })
+                            .ContentPadding(FMargin(10.0f, 5.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("1K")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnResolution2K(); })
+                            .ContentPadding(FMargin(10.0f, 5.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("2K")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                        + SHorizontalBox::Slot()
+                        .AutoWidth()
+                        .Padding(FMargin(5.0f, 0.0f, 0.0f, 0.0f))
+                        [
+                            SNew(SButton)
+                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f); })
+                            .OnClicked_Lambda([this]() { return OnResolution4K(); })
+                            .ContentPadding(FMargin(10.0f, 5.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("4K")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                                .ColorAndOpacity(FLinearColor::White)
+                            ]
+                        ]
+                    ]
                     // Capture Button
                     + SVerticalBox::Slot()
                     .AutoHeight()
@@ -203,10 +281,21 @@ TSharedRef<SWidget> UPhotoCaptureWidget::RebuildWidget()
                         .ContentPadding(FMargin(30.0f, 10.0f))
                         [
                             SNew(STextBlock)
-                            .Text(FText::FromString(TEXT("📷 高清截图")))
+                            .Text(FText::FromString(TEXT("高清截图")))
                             .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
                             .ColorAndOpacity(FLinearColor::White)
                         ]
+                    ]
+                    // Status Text
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(FMargin(0.0f, 10.0f, 0.0f, 0.0f))
+                    .HAlign(HAlign_Center)
+                    [
+                        SAssignNew(StatusText, STextBlock)
+                        .Text(FText::FromString(TEXT("")))
+                        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                        .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
                     ]
                 ]
             ]
@@ -308,19 +397,68 @@ FReply UPhotoCaptureWidget::OnCaptureClicked()
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (PC)
     {
-        // Use HighResShot console command
-        FString Command = FString::Printf(TEXT("HighResShot %d"), ScreenshotScale);
+        // Resolution based on selection
+        int32 Width = 1920;
+        int32 Height = 1080;
+        FString ResName = TEXT("1K");
+        
+        switch (ResolutionIndex)
+        {
+            case 0: Width = 1920; Height = 1080; ResName = TEXT("1K"); break;
+            case 1: Width = 2560; Height = 1440; ResName = TEXT("2K"); break;
+            case 2: Width = 3840; Height = 2160; ResName = TEXT("4K"); break;
+        }
+        
+        // Use HighResShot console command with resolution
+        FString Command = FString::Printf(TEXT("HighResShot %dx%d"), Width, Height);
         PC->ConsoleCommand(Command);
+        
+        // Get save path
+        FString SavePath = FPaths::ProjectSavedDir() / TEXT("Screenshots");
         
         // Update status
         if (StatusText.IsValid())
         {
-            StatusText->SetText(FText::FromString(TEXT("截图已保存到 Saved/Screenshots")));
+            StatusText->SetText(FText::FromString(FString::Printf(TEXT("%s 截图已保存: %s"), *ResName, *SavePath)));
         }
         
-        UE_LOG(LogTemp, Log, TEXT("High resolution screenshot captured at %dx scale"), ScreenshotScale);
+        UE_LOG(LogTemp, Log, TEXT("Screenshot %s (%dx%d) saved to: %s"), *ResName, Width, Height, *SavePath);
     }
     
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnResetClicked()
+{
+    FocalLength = DefaultFocalLength;
+    Aperture = DefaultAperture;
+    FocusDistance = DefaultFocusDistance;
+    UpdateParameterDisplay();
+    ApplyAllCameraSettings();
+    
+    if (StatusText.IsValid())
+    {
+        StatusText->SetText(FText::FromString(TEXT("已恢复默认参数")));
+    }
+    
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnResolution1K()
+{
+    ResolutionIndex = 0;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnResolution2K()
+{
+    ResolutionIndex = 1;
+    return FReply::Handled();
+}
+
+FReply UPhotoCaptureWidget::OnResolution4K()
+{
+    ResolutionIndex = 2;
     return FReply::Handled();
 }
 
