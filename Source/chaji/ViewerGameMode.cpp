@@ -5,4 +5,5 @@
 AViewerGameMode::AViewerGameMode()
 {
     HUDClass = AViewerHUD::StaticClass();
+    DefaultPawnClass = AViewerPawn::StaticClass();
 }

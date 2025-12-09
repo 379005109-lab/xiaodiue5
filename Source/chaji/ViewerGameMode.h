@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "ViewerPawn.h"
 #include "ViewerGameMode.generated.h"
 
 UCLASS()
