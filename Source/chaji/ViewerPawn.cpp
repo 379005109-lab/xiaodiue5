@@ -30,10 +30,21 @@ AViewerPawn::AViewerPawn()
 
 void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-    // Call parent to get all default bindings
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
+    check(PlayerInputComponent);
     
-    // Note: We keep all default bindings including MoveUp
-    // The Ctrl key descent is handled by MoveUp axis, but we don't remove it
-    // to keep Q/E working for up/down movement
+    // DON'T call Super - we manually bind only what we need
+    // This prevents default Ctrl binding for descent
+    
+    // Movement
+    PlayerInputComponent->BindAxis("MoveForward", this, &ADefaultPawn::MoveForward);
+    PlayerInputComponent->BindAxis("MoveRight", this, &ADefaultPawn::MoveRight);
+    
+    // Look
+    PlayerInputComponent->BindAxis("Turn", this, &ADefaultPawn::AddControllerYawInput);
+    PlayerInputComponent->BindAxis("TurnRate", this, &ADefaultPawn::TurnAtRate);
+    PlayerInputComponent->BindAxis("LookUp", this, &ADefaultPawn::AddControllerPitchInput);
+    PlayerInputComponent->BindAxis("LookUpRate", this, &ADefaultPawn::LookUpAtRate);
+    
+    // Up/Down only with Q/E (Space for up, no Ctrl for down)
+    PlayerInputComponent->BindAxis("MoveUp", this, &ADefaultPawn::MoveUp_World);
 }

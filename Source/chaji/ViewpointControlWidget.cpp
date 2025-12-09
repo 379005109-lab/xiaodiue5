@@ -77,35 +77,55 @@ void UViewpointControlWidget::RebuildThumbnails()
     for (int32 i = 0; i < ViewpointCount; i++)
     {
         bool bIsSelected = (i == CurrentViewpoint);
-        FLinearColor BorderColor = bIsSelected ? FLinearColor(0.2f, 0.6f, 1.0f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f);
-        FLinearColor BgColor = bIsSelected ? FLinearColor(0.15f, 0.2f, 0.3f, 1.0f) : FLinearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        FLinearColor BorderColor = bIsSelected ? FLinearColor(0.0f, 0.7f, 1.0f, 1.0f) : FLinearColor(0.4f, 0.4f, 0.4f, 1.0f);
+        FLinearColor BgColor = bIsSelected ? FLinearColor(0.1f, 0.15f, 0.2f, 1.0f) : FLinearColor(0.08f, 0.08f, 0.08f, 1.0f);
+        float BorderSize = bIsSelected ? 3.0f : 2.0f;
         
         ThumbnailContainer->AddSlot()
             .AutoWidth()
-            .Padding(FMargin(5.0f))
+            .Padding(FMargin(4.0f))
             [
                 SNew(SButton)
-                .ButtonColorAndOpacity(BgColor)
+                .ButtonColorAndOpacity(FLinearColor::Transparent)
                 .OnClicked_Lambda([this, i]() { return OnThumbnailClicked(i); })
                 .ContentPadding(FMargin(0.0f))
                 [
                     SNew(SBorder)
+                    .BorderImage(FCoreStyle::Get().GetBrush("Border"))
                     .BorderBackgroundColor(BorderColor)
-                    .Padding(FMargin(3.0f))
+                    .Padding(FMargin(BorderSize))
                     [
                         SNew(SBox)
-                        .WidthOverride(120.0f)
-                        .HeightOverride(70.0f)
+                        .WidthOverride(140.0f)
+                        .HeightOverride(80.0f)
                         [
-                            SNew(SBorder)
-                            .BorderBackgroundColor(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f))
+                            SNew(SOverlay)
+                            // Background
+                            + SOverlay::Slot()
+                            [
+                                SNew(SBorder)
+                                .BorderBackgroundColor(BgColor)
+                            ]
+                            // Viewpoint number (large, centered)
+                            + SOverlay::Slot()
                             .HAlign(HAlign_Center)
                             .VAlign(VAlign_Center)
                             [
                                 SNew(STextBlock)
-                                .Text(FText::FromString(FString::Printf(TEXT("镜头 %d"), i + 1)))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
-                                .ColorAndOpacity(FLinearColor::White)
+                                .Text(FText::FromString(FString::Printf(TEXT("%d"), i + 1)))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 28))
+                                .ColorAndOpacity(bIsSelected ? FLinearColor(0.0f, 0.8f, 1.0f) : FLinearColor(0.6f, 0.6f, 0.6f))
+                            ]
+                            // Label at bottom
+                            + SOverlay::Slot()
+                            .HAlign(HAlign_Center)
+                            .VAlign(VAlign_Bottom)
+                            .Padding(FMargin(0.0f, 0.0f, 0.0f, 6.0f))
+                            [
+                                SNew(STextBlock)
+                                .Text(FText::FromString(TEXT("镜头")))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                                .ColorAndOpacity(FLinearColor(0.5f, 0.5f, 0.5f))
                             ]
                         ]
                     ]

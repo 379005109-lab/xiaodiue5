@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "ViewerPawn.h"
+#include "ViewerPlayerController.h"
 #include "ViewerGameMode.generated.h"
 
 UCLASS()

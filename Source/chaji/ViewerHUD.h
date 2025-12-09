@@ -8,6 +8,7 @@
 #include "PhotoCaptureWidget.h"
 #include "CameraViewController.h"
 #include "ViewpointPreviewManager.h"
+#include "ViewerPlayerController.h"
 #include "ViewerHUD.generated.h"
 
 UCLASS()
@@ -51,4 +52,7 @@ private:
     
     UFUNCTION()
     void OnViewpointChanged(int32 Index);
+    
+    UFUNCTION()
+    void OnMouseWheel(float Delta);
 };

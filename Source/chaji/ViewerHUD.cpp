@@ -41,6 +41,13 @@ void AViewerHUD::BeginPlay()
     
     SetupUI();
     
+    // Bind mouse wheel from PlayerController
+    AViewerPlayerController* VPC = Cast<AViewerPlayerController>(GetOwningPlayerController());
+    if (VPC)
+    {
+        VPC->OnMouseWheelScroll.AddDynamic(this, &AViewerHUD::OnMouseWheel);
+    }
+    
     // Setup initial previews
     if (CameraController && CameraController->Categories.Num() > 0)
     {
@@ -187,6 +194,11 @@ void AViewerHUD::Tick(float DeltaTime)
 
 void AViewerHUD::HandleGlobalInput()
 {
+    // Scroll wheel is now handled by OnMouseWheel callback
+}
+
+void AViewerHUD::OnMouseWheel(float Delta)
+{
     if (!PhotoCapture) return;
     
     APlayerController* PC = GetOwningPlayerController();
@@ -197,40 +209,19 @@ void AViewerHUD::HandleGlobalInput()
     bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
     bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
     
-    // Get mouse wheel input
-    float ScrollDelta = PC->GetInputAxisValue(TEXT("LookUp")); // Mouse wheel maps to this
-    
-    // Also check for direct mouse wheel
-    if (FMath::Abs(ScrollDelta) < 0.01f)
+    if (bCtrl)
     {
-        // Try alternate method - check mouse wheel keys
-        if (PC->IsInputKeyDown(EKeys::MouseScrollUp))
-        {
-            ScrollDelta = 1.0f;
-        }
-        else if (PC->IsInputKeyDown(EKeys::MouseScrollDown))
-        {
-            ScrollDelta = -1.0f;
-        }
+        // Ctrl + Scroll = Focal Length
+        PhotoCapture->AdjustFocalLength(Delta * 5.0f);
     }
-    
-    // Only process if a modifier is held and there's scroll input
-    if ((bCtrl || bShift || bAlt) && FMath::Abs(ScrollDelta) > 0.01f)
+    else if (bShift)
     {
-        if (bCtrl)
-        {
-            // Ctrl + Scroll = Focal Length
-            PhotoCapture->AdjustFocalLength(ScrollDelta * 5.0f);
-        }
-        else if (bShift)
-        {
-            // Shift + Scroll = Aperture  
-            PhotoCapture->AdjustAperture(ScrollDelta * 0.5f);
-        }
-        else if (bAlt)
-        {
-            // Alt + Scroll = Focus Distance
-            PhotoCapture->AdjustFocusDistance(ScrollDelta * 100.0f);
-        }
+        // Shift + Scroll = Aperture  
+        PhotoCapture->AdjustAperture(Delta * 0.5f);
+    }
+    else if (bAlt)
+    {
+        // Alt + Scroll = Focus Distance
+        PhotoCapture->AdjustFocusDistance(Delta * 100.0f);
     }
 }
