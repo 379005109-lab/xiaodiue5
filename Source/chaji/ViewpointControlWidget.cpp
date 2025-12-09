@@ -66,22 +66,6 @@ void UViewpointControlWidget::SetPreviewManager(AViewpointPreviewManager* Manage
 void UViewpointControlWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
-    UpdatePreviews();
-}
-
-void UViewpointControlWidget::UpdatePreviews()
-{
-    if (!PreviewManager) return;
-    
-    // Update brush resources from render targets
-    for (int32 i = 0; i < PreviewImages.Num() && i < PreviewBrushes.Num(); i++)
-    {
-        UTextureRenderTarget2D* RT = PreviewManager->GetPreviewTexture(i);
-        if (RT && PreviewImages[i].IsValid())
-        {
-            PreviewBrushes[i].SetResourceObject(RT);
-        }
-    }
 }
 
 void UViewpointControlWidget::RebuildThumbnails()
@@ -89,39 +73,19 @@ void UViewpointControlWidget::RebuildThumbnails()
     if (!ThumbnailContainer.IsValid()) return;
     
     ThumbnailContainer->ClearChildren();
-    PreviewImages.Empty();
-    PreviewBrushes.Empty();
     
     for (int32 i = 0; i < ViewpointCount; i++)
     {
         bool bIsSelected = (i == CurrentViewpoint);
         FLinearColor BorderColor = bIsSelected ? FLinearColor(0.2f, 0.6f, 1.0f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f);
-        
-        // Create brush for this thumbnail
-        FSlateBrush NewBrush;
-        NewBrush.ImageSize = FVector2D(160, 90);
-        NewBrush.DrawAs = ESlateBrushDrawType::Image;
-        
-        // Set render target if available
-        if (PreviewManager)
-        {
-            UTextureRenderTarget2D* RT = PreviewManager->GetPreviewTexture(i);
-            if (RT)
-            {
-                NewBrush.SetResourceObject(RT);
-            }
-        }
-        PreviewBrushes.Add(NewBrush);
-        
-        // Create image widget
-        TSharedPtr<SImage> PreviewImage;
+        FLinearColor BgColor = bIsSelected ? FLinearColor(0.15f, 0.2f, 0.3f, 1.0f) : FLinearColor(0.1f, 0.1f, 0.1f, 1.0f);
         
         ThumbnailContainer->AddSlot()
             .AutoWidth()
             .Padding(FMargin(5.0f))
             [
                 SNew(SButton)
-                .ButtonColorAndOpacity(FLinearColor(0.1f, 0.1f, 0.1f, 1.0f))
+                .ButtonColorAndOpacity(BgColor)
                 .OnClicked_Lambda([this, i]() { return OnThumbnailClicked(i); })
                 .ContentPadding(FMargin(0.0f))
                 [
@@ -129,37 +93,24 @@ void UViewpointControlWidget::RebuildThumbnails()
                     .BorderBackgroundColor(BorderColor)
                     .Padding(FMargin(3.0f))
                     [
-                        SNew(SOverlay)
-                        + SOverlay::Slot()
-                        [
-                            SNew(SBox)
-                            .WidthOverride(160.0f)
-                            .HeightOverride(90.0f)
-                            [
-                                SAssignNew(PreviewImage, SImage)
-                                .Image(&PreviewBrushes[i])
-                            ]
-                        ]
-                        + SOverlay::Slot()
-                        .HAlign(HAlign_Center)
-                        .VAlign(VAlign_Bottom)
-                        .Padding(FMargin(0.0f, 0.0f, 0.0f, 5.0f))
+                        SNew(SBox)
+                        .WidthOverride(120.0f)
+                        .HeightOverride(70.0f)
                         [
                             SNew(SBorder)
-                            .BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.7f))
-                            .Padding(FMargin(8.0f, 4.0f))
+                            .BorderBackgroundColor(FLinearColor(0.2f, 0.2f, 0.2f, 1.0f))
+                            .HAlign(HAlign_Center)
+                            .VAlign(VAlign_Center)
                             [
                                 SNew(STextBlock)
                                 .Text(FText::FromString(FString::Printf(TEXT("镜头 %d"), i + 1)))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
                                 .ColorAndOpacity(FLinearColor::White)
                             ]
                         ]
                     ]
                 ]
             ];
-        
-        PreviewImages.Add(PreviewImage);
     }
 }
 

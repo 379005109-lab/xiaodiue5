@@ -177,35 +177,43 @@ void AViewerHUD::HandleGlobalInput()
     APlayerController* PC = GetOwningPlayerController();
     if (!PC) return;
     
-    // Check for mouse wheel with modifiers
-    static float LastScrollTime = 0.0f;
-    float CurrentTime = GetWorld()->GetTimeSeconds();
+    // Check modifier keys
+    bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
+    bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
+    bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
     
-    // Get scroll delta from input
-    float ScrollDelta = PC->GetInputAxisValue(TEXT("MouseWheelAxis"));
-    
-    if (FMath::Abs(ScrollDelta) > 0.01f && (CurrentTime - LastScrollTime) > 0.05f)
+    // Handle keyboard shortcuts: Q/E for focal length, A/D for aperture, Z/C for focus
+    if (bCtrl)
     {
-        LastScrollTime = CurrentTime;
-        
-        bool bCtrl = PC->IsInputKeyDown(EKeys::LeftControl) || PC->IsInputKeyDown(EKeys::RightControl);
-        bool bShift = PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift);
-        bool bAlt = PC->IsInputKeyDown(EKeys::LeftAlt) || PC->IsInputKeyDown(EKeys::RightAlt);
-        
-        if (bCtrl)
+        if (PC->WasInputKeyJustPressed(EKeys::Q))
         {
-            // Ctrl + Scroll = Focal Length
-            PhotoCapture->AdjustFocalLength(ScrollDelta * 5.0f);
+            PhotoCapture->AdjustFocalLength(-5.0f);
         }
-        else if (bShift)
+        else if (PC->WasInputKeyJustPressed(EKeys::E))
         {
-            // Shift + Scroll = Aperture
-            PhotoCapture->AdjustAperture(ScrollDelta * 0.5f);
+            PhotoCapture->AdjustFocalLength(5.0f);
         }
-        else if (bAlt)
+    }
+    else if (bShift)
+    {
+        if (PC->WasInputKeyJustPressed(EKeys::Q))
         {
-            // Alt + Scroll = Focus Distance
-            PhotoCapture->AdjustFocusDistance(ScrollDelta * 100.0f);
+            PhotoCapture->AdjustAperture(-0.5f);
+        }
+        else if (PC->WasInputKeyJustPressed(EKeys::E))
+        {
+            PhotoCapture->AdjustAperture(0.5f);
+        }
+    }
+    else if (bAlt)
+    {
+        if (PC->WasInputKeyJustPressed(EKeys::Q))
+        {
+            PhotoCapture->AdjustFocusDistance(-100.0f);
+        }
+        else if (PC->WasInputKeyJustPressed(EKeys::E))
+        {
+            PhotoCapture->AdjustFocusDistance(100.0f);
         }
     }
 }

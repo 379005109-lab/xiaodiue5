@@ -35,8 +35,6 @@ protected:
 private:
     TSharedPtr<class SHorizontalBox> ThumbnailContainer;
     TSharedPtr<class SBox> ContentBox;
-    TArray<TSharedPtr<class SImage>> PreviewImages;
-    TArray<FSlateBrush> PreviewBrushes;
     
     UPROPERTY()
     AViewpointPreviewManager* PreviewManager;
@@ -46,7 +44,6 @@ private:
     bool bIsExpanded = true;
 
     void RebuildThumbnails();
-    void UpdatePreviews();
     void UpdateVisibility();
     FReply OnThumbnailClicked(int32 Index);
     FReply OnToggleClicked();
