@@ -562,16 +562,12 @@ void AViewerHUD::OnResetCamera()
     if (PC)
     {
         AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
-        if (ViewerPawn)
+        if (ViewerPawn && ViewerPawn->bInitialStateSaved)
         {
             ViewerPawn->SetActorLocation(ViewerPawn->InitialLocation);
             PC->SetControlRotation(ViewerPawn->InitialRotation);
-            ViewerPawn->CurrentFocalLength = ViewerPawn->InitialFocalLength;
-            ViewerPawn->CurrentAperture = ViewerPawn->InitialAperture;
-            ViewerPawn->CurrentFocusDistance = ViewerPawn->InitialFocusDistance;
-            ViewerPawn->ApplyCameraSettings();
             
-            UE_LOG(LogTemp, Log, TEXT("Camera reset to initial state"));
+            UE_LOG(LogTemp, Log, TEXT("Camera reset to initial position"));
         }
     }
 }
