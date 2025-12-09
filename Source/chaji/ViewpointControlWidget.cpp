@@ -280,6 +280,7 @@ FReply UViewpointControlWidget::OnAddViewpoint()
 {
     ViewpointCount++;
     ViewpointSelected.Add(false);
+    ViewpointDataArray.Add(FViewpointData()); // Add empty data for new viewpoint
     RebuildThumbnails();
     OnViewpointAdded.Broadcast();
     return FReply::Handled();
@@ -293,6 +294,10 @@ FReply UViewpointControlWidget::OnRemoveViewpoint()
         if (ViewpointSelected.Num() > 0)
         {
             ViewpointSelected.Pop();
+        }
+        if (ViewpointDataArray.Num() > 0)
+        {
+            ViewpointDataArray.Pop();
         }
         if (CurrentViewpoint >= ViewpointCount)
         {

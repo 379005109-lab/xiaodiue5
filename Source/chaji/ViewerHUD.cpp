@@ -132,6 +132,9 @@ void AViewerHUD::SetupUI()
             PhotoCapture->SetViewpointControlRef(ViewpointControl);
         }
         
+        // Bind batch capture event
+        PhotoCapture->OnBatchCaptureStart.AddDynamic(this, &AViewerHUD::OnBatchCaptureStart);
+        
         // Set reference to pawn for shortcuts
         AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
         if (ViewerPawn)
@@ -302,4 +305,64 @@ void AViewerHUD::HandleGlobalInput()
 void AViewerHUD::OnMouseWheel(float Delta)
 {
     // This is called from PlayerController, handled in HandleGlobalInput
+}
+
+void AViewerHUD::OnBatchCaptureStart(const TArray<int32>& Indices)
+{
+    if (Indices.Num() == 0) return;
+    
+    // Store indices and start batch capture
+    BatchCaptureIndices = Indices;
+    BatchCaptureCurrentIndex = 0;
+    
+    // Start the sequence
+    PerformBatchCapture(BatchCaptureIndices, 0);
+}
+
+void AViewerHUD::PerformBatchCapture(const TArray<int32>& Indices, int32 CurrentIndex)
+{
+    if (CurrentIndex >= Indices.Num())
+    {
+        // Batch capture complete
+        if (PhotoCapture)
+        {
+            // Update status to show completion
+            UE_LOG(LogTemp, Log, TEXT("Batch capture complete: %d images"), Indices.Num());
+        }
+        return;
+    }
+    
+    int32 ViewpointIndex = Indices[CurrentIndex];
+    
+    // Switch to this viewpoint
+    if (ViewpointControl)
+    {
+        ViewpointControl->SetCurrentViewpoint(ViewpointIndex);
+        OnViewpointChanged(ViewpointIndex);
+    }
+    
+    // Delay capture to allow camera to settle, then take screenshot
+    FTimerDelegate CaptureDelegate;
+    CaptureDelegate.BindLambda([this, Indices, CurrentIndex]()
+    {
+        // Take the screenshot
+        if (PhotoCapture)
+        {
+            PhotoCapture->CaptureSingle();
+            UE_LOG(LogTemp, Log, TEXT("Captured viewpoint %d (%d/%d)"), Indices[CurrentIndex], CurrentIndex + 1, Indices.Num());
+        }
+        
+        // Schedule next capture after a delay
+        FTimerDelegate NextDelegate;
+        NextDelegate.BindLambda([this, Indices, CurrentIndex]()
+        {
+            PerformBatchCapture(Indices, CurrentIndex + 1);
+        });
+        
+        FTimerHandle NextTimerHandle;
+        GetWorld()->GetTimerManager().SetTimer(NextTimerHandle, NextDelegate, 0.5f, false);
+    });
+    
+    // Wait for camera to move before capturing
+    GetWorld()->GetTimerManager().SetTimer(BatchCaptureTimerHandle, CaptureDelegate, 0.3f, false);
 }

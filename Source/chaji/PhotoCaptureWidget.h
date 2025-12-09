@@ -5,6 +5,8 @@
 #include "Blueprint/UserWidget.h"
 #include "PhotoCaptureWidget.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBatchCaptureStart, const TArray<int32>&, Indices);
+
 UCLASS()
 class UPhotoCaptureWidget : public UUserWidget
 {
@@ -27,7 +29,11 @@ public:
     void SetViewpointControlRef(class UViewpointControlWidget* Ref) { ViewpointControlRef = Ref; }
     
     // Batch capture support
+    UPROPERTY(BlueprintAssignable)
+    FOnBatchCaptureStart OnBatchCaptureStart;
+    
     void CaptureMultiple(const TArray<int32>& Indices);
+    void CaptureSingle(); // Take a single screenshot
     
     // Called from PlayerController for scroll wheel shortcuts
     void AdjustFocalLength(float Delta);

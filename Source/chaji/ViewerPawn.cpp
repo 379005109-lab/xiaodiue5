@@ -70,8 +70,8 @@ void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     PlayerInputComponent->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AViewerPawn::OnMouseScrollUp);
     PlayerInputComponent->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AViewerPawn::OnMouseScrollDown);
     
-    // Escape for reset (Ctrl+Esc)
-    PlayerInputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AViewerPawn::OnResetShortcut);
+    // R key for reset (instead of Esc which exits simulation)
+    PlayerInputComponent->BindKey(EKeys::R, IE_Pressed, this, &AViewerPawn::OnResetShortcut);
 }
 
 void AViewerPawn::Tick(float DeltaTime)

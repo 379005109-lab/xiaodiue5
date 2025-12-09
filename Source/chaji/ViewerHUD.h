@@ -64,5 +64,13 @@ private:
     UFUNCTION()
     void OnMouseWheel(float Delta);
     
-    void PerformBatchCapture();
+    UFUNCTION()
+    void OnBatchCaptureStart(const TArray<int32>& Indices);
+    
+    void PerformBatchCapture(const TArray<int32>& Indices, int32 CurrentIndex);
+    
+    // Batch capture state
+    TArray<int32> BatchCaptureIndices;
+    int32 BatchCaptureCurrentIndex = 0;
+    FTimerHandle BatchCaptureTimerHandle;
 };
