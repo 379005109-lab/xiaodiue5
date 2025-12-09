@@ -97,13 +97,13 @@ void AViewerHUD::SetupUI()
         ViewportSize = FVector2D(1920.0f, 1080.0f); // Default fallback
     }
     
-    // Create the viewpoint control widget (bottom-left, 2% from left, 95% from top)
+    // Create the viewpoint control widget (bottom-left, photos/viewpoints area)
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(9);
         float PosX = ViewportSize.X * 0.02f;
-        float PosY = ViewportSize.Y * 0.88f;
+        float PosY = ViewportSize.Y * 0.92f; // Very bottom
         ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
         
         // Bind viewpoint change event
@@ -159,13 +159,13 @@ void AViewerHUD::SetupUI()
         ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
     }
     
-    // Create video control widget (bottom-left, below viewpoint control)
+    // Create video control widget (bottom-left, above viewpoint control)
     VideoControl = CreateWidget<UVideoControlWidget>(PC, UVideoControlWidget::StaticClass());
     if (VideoControl)
     {
         VideoControl->AddToViewport(9);
         float PosX = ViewportSize.X * 0.02f;
-        float PosY = ViewportSize.Y * 0.70f;
+        float PosY = ViewportSize.Y * 0.72f; // Above viewpoint control
         VideoControl->SetPositionInViewport(FVector2D(PosX, PosY));
         VideoControl->InitWidget();
         
@@ -175,6 +175,7 @@ void AViewerHUD::SetupUI()
         VideoControl->OnConfirmStartFrame.AddDynamic(this, &AViewerHUD::OnSetVideoStartFrame);
         VideoControl->OnConfirmEndFrame.AddDynamic(this, &AViewerHUD::OnSetVideoEndFrame);
         VideoControl->OnPlaySingleClip.AddDynamic(this, &AViewerHUD::OnPlaySingleClip);
+        VideoControl->OnExportVideo.AddDynamic(this, &AViewerHUD::OnExportVideo);
     }
     
     // Set input mode to allow UI interaction while keeping game input
@@ -518,6 +519,58 @@ void AViewerHUD::OnPlaySingleClip(int32 ClipIndex)
 {
     ClipsToPlay.Empty(); // Clear sequence
     PlayVideoClip(ClipIndex);
+}
+
+void AViewerHUD::OnExportVideo()
+{
+    if (!VideoControl) return;
+    
+    // Get all valid clips
+    TArray<int32> ValidClips;
+    for (int32 i = 0; i < VideoControl->GetClipCount(); i++)
+    {
+        FVideoClipData Clip = VideoControl->GetClipData(i);
+        if (Clip.bStartSet && Clip.bEndSet)
+        {
+            ValidClips.Add(i);
+        }
+    }
+    
+    if (ValidClips.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No valid clips to export"));
+        return;
+    }
+    
+    // Calculate total frames (30fps)
+    float TotalDuration = 0.0f;
+    for (int32 ClipIdx : ValidClips)
+    {
+        TotalDuration += VideoControl->GetClipData(ClipIdx).Duration;
+    }
+    
+    int32 TotalFrames = (int32)(TotalDuration * 30.0f);
+    
+    // Start sequence capture
+    APlayerController* PC = GetOwningPlayerController();
+    if (PC)
+    {
+        // Enable movie capture mode
+        FString ExportPath = FPaths::ProjectSavedDir() / TEXT("VideoExport");
+        IFileManager::Get().MakeDirectory(*ExportPath, true);
+        
+        FString Command = FString::Printf(TEXT("r.setres 1920x1080"));
+        PC->ConsoleCommand(Command);
+        
+        UE_LOG(LogTemp, Log, TEXT("Video export started: %d clips, %.1f seconds, %d frames"), 
+            ValidClips.Num(), TotalDuration, TotalFrames);
+        UE_LOG(LogTemp, Log, TEXT("Export path: %s"), *ExportPath);
+        
+        // Play all clips for recording
+        ClipsToPlay = ValidClips;
+        CurrentClipInSequence = 0;
+        PlayVideoClip(ClipsToPlay[0]);
+    }
 }
 
 void AViewerHUD::PlayVideoClip(int32 ClipIndex)

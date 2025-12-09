@@ -11,6 +11,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayAllClips);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConfirmStartFrame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConfirmEndFrame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlaySingleClip, int32, ClipIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExportVideo);
 
 UCLASS()
 class UVideoControlWidget : public UUserWidget
@@ -47,6 +48,12 @@ public:
     
     UPROPERTY(BlueprintAssignable)
     FOnPlaySingleClip OnPlaySingleClip;
+    
+    UPROPERTY(BlueprintAssignable)
+    FOnExportVideo OnExportVideo;
+    
+    // Delete specific clip
+    void DeleteClip(int32 Index);
 
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;

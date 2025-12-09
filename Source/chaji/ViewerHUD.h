@@ -98,6 +98,9 @@ private:
     UFUNCTION()
     void OnPlaySingleClip(int32 ClipIndex);
     
+    UFUNCTION()
+    void OnExportVideo();
+    
     void PlayVideoClip(int32 ClipIndex);
     void UpdateVideoPlayback(float DeltaTime);
     
