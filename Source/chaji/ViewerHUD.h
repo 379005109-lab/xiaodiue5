@@ -7,6 +7,7 @@
 #include "ViewpointControlWidget.h"
 #include "PhotoCaptureWidget.h"
 #include "CameraViewController.h"
+#include "ViewpointPreviewManager.h"
 #include "ViewerHUD.generated.h"
 
 UCLASS()
@@ -37,9 +38,13 @@ private:
 
     UPROPERTY()
     ACameraViewController* CameraController;
+    
+    UPROPERTY()
+    AViewpointPreviewManager* PreviewManager;
 
     void SetupUI();
     void HandleGlobalInput();
+    void SetupPreviewsForCategory(int32 CategoryIndex);
 
     UFUNCTION()
     void OnCategorySelected(int32 Index);

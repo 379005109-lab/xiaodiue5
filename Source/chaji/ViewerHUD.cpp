@@ -34,7 +34,17 @@ void AViewerHUD::BeginPlay()
         }
     }
     
+    // Create PreviewManager for viewpoint previews
+    FActorSpawnParameters SpawnParams;
+    PreviewManager = GetWorld()->SpawnActor<AViewpointPreviewManager>(AViewpointPreviewManager::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+    
     SetupUI();
+    
+    // Setup initial previews
+    if (CameraController && CameraController->Categories.Num() > 0)
+    {
+        SetupPreviewsForCategory(0);
+    }
 }
 
 void AViewerHUD::SetupUI()
@@ -119,12 +129,30 @@ void AViewerHUD::OnCategorySelected(int32 Index)
         if (ViewpointControl && Index >= 0 && Index < CameraController->Categories.Num())
         {
             ViewpointControl->SetViewpointCount(CameraController->Categories[Index].Viewpoints.Num());
+            
+            // Setup previews for the new category
+            SetupPreviewsForCategory(Index);
         }
     }
     
     if (TabWidget)
     {
         TabWidget->SetSelectedIndex(Index);
+    }
+}
+
+void AViewerHUD::SetupPreviewsForCategory(int32 CategoryIndex)
+{
+    if (!PreviewManager || !CameraController) return;
+    if (!CameraController->Categories.IsValidIndex(CategoryIndex)) return;
+    
+    const FCategoryViewpoint& Category = CameraController->Categories[CategoryIndex];
+    PreviewManager->SetupPreviews(Category.Viewpoints);
+    
+    // Connect preview manager to widget
+    if (ViewpointControl)
+    {
+        ViewpointControl->SetPreviewManager(PreviewManager);
     }
 }
 
