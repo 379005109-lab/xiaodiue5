@@ -88,14 +88,16 @@ void AViewerHUD::SetupUI()
     const float RightPanelWidth = 300.0f;
     const float BottomPanelHeight = 150.0f;
     
-    // 创建全屏主布局
+    // 创建全屏主布局 - 使用锚点填充整个屏幕
     MainLayout = CreateWidget<UMainLayoutWidget>(PC, UMainLayoutWidget::StaticClass());
     if (MainLayout)
     {
-        MainLayout->AddToViewport(1); // 最底层
-        MainLayout->SetDesiredSizeInViewport(ViewportSize);
-        MainLayout->SetPositionInViewport(FVector2D(0.0f, 0.0f));
+        MainLayout->AddToViewport(0); // 最底层 (ZOrder=0)
+        
+        // 设置为全屏填充
+        MainLayout->SetAnchorsInViewport(FAnchors(0.0f, 0.0f, 1.0f, 1.0f)); // 左上到右下
         MainLayout->SetAlignmentInViewport(FVector2D(0.0f, 0.0f));
+        MainLayout->SetPositionInViewport(FVector2D(0.0f, 0.0f));
     }
     
     // 类别标签 (左侧面板内)
