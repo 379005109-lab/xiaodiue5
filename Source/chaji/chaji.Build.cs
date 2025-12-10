@@ -14,7 +14,9 @@ public class chaji : ModuleRules
             "Engine", 
             "InputCore",
             "UMG",
-            "CinematicCamera"
+            "CinematicCamera",
+            "Json",
+            "JsonUtilities"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { 
