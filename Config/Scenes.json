@@ -1,0 +1,38 @@
+[
+  {
+    "id": "scene_1",
+    "name": "现代卧室",
+    "description": "现代风格卧室场景",
+    "thumbnail": "",
+    "levelPath": "/Game/Main",
+    "productType": "样板间",
+    "style": "现代",
+    "spaceType": "卧室",
+    "tags": ["现代", "卧室"],
+    "isDownloaded": true
+  },
+  {
+    "id": "scene_2",
+    "name": "意式客餐厅",
+    "description": "意式风格客餐厅",
+    "thumbnail": "",
+    "levelPath": "/Game/Main",
+    "productType": "样板间",
+    "style": "意式",
+    "spaceType": "客厅",
+    "tags": ["意式", "客厅"],
+    "isDownloaded": true
+  },
+  {
+    "id": "scene_3",
+    "name": "极简展厅",
+    "description": "极简风格展厅",
+    "thumbnail": "",
+    "levelPath": "/Game/Main",
+    "productType": "展厅",
+    "style": "极简",
+    "spaceType": "展厅",
+    "tags": ["极简", "展厅"],
+    "isDownloaded": false
+  }
+]
