@@ -485,7 +485,7 @@ void AViewerHUD::OnMediaBatchCapture()
         PhotoCapture->SetAspectRatioIndex(MediaControl->GetAspectRatioIndex());
         
         // 获取选中的视点并执行批量拍摄
-        TArray<int32> SelectedIndices = ViewpointControl->GetSelectedIndices();
+        TArray<int32> SelectedIndices = ViewpointControl->GetSelectedViewpoints();
         if (SelectedIndices.Num() > 0)
         {
             PhotoCapture->CaptureMultiple(SelectedIndices);
