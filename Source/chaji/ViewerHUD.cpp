@@ -68,17 +68,26 @@ void AViewerHUD::SetupUI()
     APlayerController* PC = GetOwningPlayerController();
     if (!PC) return;
     
-    // Create the tab widget (top-left)
+    // ============ 全屏主布局 ============
+    // 创建全屏主布局Widget，覆盖整个屏幕
+    // 左侧、右侧、底部是不透明面板
+    // 中间是透明区域，显示3D画面
+    
+    MainLayout = CreateWidget<UMainLayoutWidget>(PC, UMainLayoutWidget::StaticClass());
+    if (MainLayout)
+    {
+        MainLayout->AddToViewport(5); // 较低层级，让子Widget可以在上面
+    }
+    
+    // 创建类别标签 (左侧面板)
     TabWidget = CreateWidget<UCategoryTabWidget>(PC, UCategoryTabWidget::StaticClass());
     if (TabWidget)
     {
         TabWidget->AddToViewport(10);
-        TabWidget->SetPositionInViewport(FVector2D(20.0f, 30.0f));
+        TabWidget->SetPositionInViewport(FVector2D(5.0f, 40.0f));
         
-        // Bind category selection event
         TabWidget->OnCategorySelected.AddDynamic(this, &AViewerHUD::OnCategorySelected);
         
-        // Set categories from controller
         if (CameraController)
         {
             TArray<FString> Names = CameraController->GetCategoryNames();
@@ -86,7 +95,7 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Get viewport size for responsive positioning
+    // 获取视口大小
     FVector2D ViewportSize;
     if (GEngine && GEngine->GameViewport)
     {
@@ -94,32 +103,21 @@ void AViewerHUD::SetupUI()
     }
     else
     {
-        ViewportSize = FVector2D(1920.0f, 1080.0f); // Default fallback
+        ViewportSize = FVector2D(1920.0f, 1080.0f);
     }
     
-    // ============ 剪映风格布局 ============
-    // 左侧面板: 类别标签 (宽度200px)
-    // 右侧面板: 参数详情 (宽度220px)  
-    // 底部面板: 时间轴+视频控制+多镜头 (高度180px)
-    // 中间: 干净的3D画面
-    
-    const float LeftPanelWidth = 200.0f;
-    const float RightPanelWidth = 220.0f;
-    const float BottomPanelHeight = 180.0f;
-    
-    // 左侧: TabWidget 已创建，移到左侧
-    if (TabWidget)
-    {
-        TabWidget->SetPositionInViewport(FVector2D(10.0f, 60.0f));
-    }
+    // 面板尺寸
+    const float LeftPanelWidth = 180.0f;
+    const float RightPanelWidth = 300.0f;
+    const float BottomPanelHeight = 150.0f;
     
     // 右侧面板: 参数显示
     ParameterDisplay = CreateWidget<UParameterDisplayWidget>(PC, UParameterDisplayWidget::StaticClass());
     if (ParameterDisplay)
     {
         ParameterDisplay->AddToViewport(10);
-        float PosX = ViewportSize.X - RightPanelWidth;
-        float PosY = 10.0f;
+        float PosX = ViewportSize.X - RightPanelWidth + 10.0f;
+        float PosY = 40.0f;
         ParameterDisplay->SetPositionInViewport(FVector2D(PosX, PosY));
     }
     
@@ -129,11 +127,10 @@ void AViewerHUD::SetupUI()
     {
         MediaControl->AddToViewport(10);
         float PosX = LeftPanelWidth + 10.0f;
-        float PosY = ViewportSize.Y - BottomPanelHeight;
+        float PosY = ViewportSize.Y - BottomPanelHeight + 5.0f;
         MediaControl->SetPositionInViewport(FVector2D(PosX, PosY));
         MediaControl->InitWidget();
         
-        // Bind events
         MediaControl->OnModeChanged.AddDynamic(this, &AViewerHUD::OnMediaModeChanged);
         MediaControl->OnPhotoShutter.AddDynamic(this, &AViewerHUD::OnMediaPhotoShutter);
         MediaControl->OnVideoClipPlay.AddDynamic(this, &AViewerHUD::OnVideoClipPlay);
@@ -146,13 +143,13 @@ void AViewerHUD::SetupUI()
         MediaControl->OnResetCamera.AddDynamic(this, &AViewerHUD::OnResetCamera);
     }
     
-    // 底部: 多镜头缩略图 (时间轴下方)
+    // 底部: 多镜头缩略图
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
-        ViewpointControl->AddToViewport(9);
+        ViewpointControl->AddToViewport(10);
         float PosX = LeftPanelWidth + 10.0f;
-        float PosY = ViewportSize.Y - 80.0f;
+        float PosY = ViewportSize.Y - 70.0f;
         ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
         
         ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
@@ -191,7 +188,7 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Set input mode to allow UI interaction while keeping game input
+    // 设置输入模式
     FInputModeGameAndUI InputMode;
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
     InputMode.SetHideCursorDuringCapture(false);

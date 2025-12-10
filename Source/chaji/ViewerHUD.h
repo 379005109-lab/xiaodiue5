@@ -13,6 +13,7 @@
 #include "ParameterDisplayWidget.h"
 #include "MediaControlWidget.h"
 #include "VideoClipData.h"
+#include "MainLayoutWidget.h"
 #include "ViewerHUD.generated.h"
 
 UCLASS()
@@ -46,6 +47,9 @@ private:
     
     UPROPERTY()
     UMediaControlWidget* MediaControl;
+    
+    UPROPERTY()
+    UMainLayoutWidget* MainLayout;
     
     UPROPERTY()
     ACameraViewController* CameraController;
