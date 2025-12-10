@@ -56,11 +56,7 @@ void AViewerPlayerController::ApplyViewportSeparation()
         LP->Origin = FVector2D(OriginX, OriginY);
         LP->Size = FVector2D(SizeX, SizeY);
         
-        // 强制更新视口
-        if (GEngine && GEngine->GameViewport)
-        {
-            GEngine->GameViewport->Invalidate();
-        }
+        // 视口设置已应用，UE会自动更新
         
         UE_LOG(LogTemp, Warning, TEXT("Viewport Separation Applied: Origin(%.3f, %.3f) Size(%.3f, %.3f)"), 
             OriginX, OriginY, SizeX, SizeY);
