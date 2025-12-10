@@ -30,7 +30,7 @@ private:
     TArray<FString> Categories;
     int32 SelectedIndex = 0;
     bool bIsExpanded = true;
-    TSharedPtr<SHorizontalBox> TabContainer;
+    TSharedPtr<SVerticalBox> TabContainer;
     TSharedPtr<SBox> ContentBox;
 
     void CreateTabs();

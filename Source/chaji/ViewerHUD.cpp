@@ -98,72 +98,38 @@ void AViewerHUD::SetupUI()
     }
     
     // ============ 剪映风格布局 ============
-    // 画面区域: 顶部40px留给标签，底部200px留给时间轴和镜头
-    // 右侧200px留给参数面板
+    // 左侧面板: 类别标签 (宽度200px)
+    // 右侧面板: 参数详情 (宽度220px)  
+    // 底部面板: 时间轴+视频控制+多镜头 (高度180px)
+    // 中间: 干净的3D画面
     
-    // 类别标签栏 (顶部，画面外)
-    // TabWidget 已经在上面创建，位置在最顶部
+    const float LeftPanelWidth = 200.0f;
+    const float RightPanelWidth = 220.0f;
+    const float BottomPanelHeight = 180.0f;
     
-    // 多镜头缩略图 (底部，画面外正下方)
-    ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
-    if (ViewpointControl)
+    // 左侧: TabWidget 已创建，移到左侧
+    if (TabWidget)
     {
-        ViewpointControl->AddToViewport(9);
-        float PosX = 10.0f;
-        float PosY = ViewportSize.Y - 90.0f; // 最底部
-        ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
-        
-        // Bind viewpoint change event
-        ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
-        ViewpointControl->OnViewpointSaved.AddDynamic(this, &AViewerHUD::OnViewpointSaved);
-        
-        // Set initial viewpoint count
-        if (CameraController && CameraController->Categories.Num() > 0)
-        {
-            ViewpointControl->SetViewpointCount(CameraController->Categories[0].Viewpoints.Num());
-            ViewpointControl->SaveInitialState();
-        }
+        TabWidget->SetPositionInViewport(FVector2D(10.0f, 60.0f));
     }
     
-    // PhotoCapture (隐藏，功能集成到MediaControl)
-    PhotoCapture = CreateWidget<UPhotoCaptureWidget>(PC, UPhotoCaptureWidget::StaticClass());
-    if (PhotoCapture)
-    {
-        PhotoCapture->InitWidget();
-        
-        if (ViewpointControl)
-        {
-            PhotoCapture->SetViewpointControlRef(ViewpointControl);
-        }
-        
-        PhotoCapture->OnBatchCaptureStart.AddDynamic(this, &AViewerHUD::OnBatchCaptureStart);
-        PhotoCapture->OnResetViewpoints.AddDynamic(this, &AViewerHUD::OnResetViewpoints);
-        
-        AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
-        if (ViewerPawn)
-        {
-            ViewerPawn->PhotoCaptureRef = PhotoCapture;
-        }
-    }
-    
-    // 参数显示 (右侧，画面外)
+    // 右侧面板: 参数显示
     ParameterDisplay = CreateWidget<UParameterDisplayWidget>(PC, UParameterDisplayWidget::StaticClass());
     if (ParameterDisplay)
     {
         ParameterDisplay->AddToViewport(10);
-        float PosX = ViewportSize.X - 220.0f; // 右侧
-        float PosY = 50.0f; // 顶部下方
+        float PosX = ViewportSize.X - RightPanelWidth;
+        float PosY = 10.0f;
         ParameterDisplay->SetPositionInViewport(FVector2D(PosX, PosY));
-        ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
     }
     
-    // 媒体控制 + 时间轴 (底部，画面外)
+    // 底部面板: 媒体控制 + 时间轴
     MediaControl = CreateWidget<UMediaControlWidget>(PC, UMediaControlWidget::StaticClass());
     if (MediaControl)
     {
         MediaControl->AddToViewport(10);
-        float PosX = 10.0f;
-        float PosY = ViewportSize.Y - 200.0f; // 底部时间轴区域
+        float PosX = LeftPanelWidth + 10.0f;
+        float PosY = ViewportSize.Y - BottomPanelHeight;
         MediaControl->SetPositionInViewport(FVector2D(PosX, PosY));
         MediaControl->InitWidget();
         
@@ -178,6 +144,51 @@ void AViewerHUD::SetupUI()
         MediaControl->OnTimelineScrub.AddDynamic(this, &AViewerHUD::OnTimelineScrub);
         MediaControl->OnOpenFolder.AddDynamic(this, &AViewerHUD::OnOpenFolder);
         MediaControl->OnResetCamera.AddDynamic(this, &AViewerHUD::OnResetCamera);
+    }
+    
+    // 底部: 多镜头缩略图 (时间轴下方)
+    ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
+    if (ViewpointControl)
+    {
+        ViewpointControl->AddToViewport(9);
+        float PosX = LeftPanelWidth + 10.0f;
+        float PosY = ViewportSize.Y - 80.0f;
+        ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
+        
+        ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);
+        ViewpointControl->OnViewpointSaved.AddDynamic(this, &AViewerHUD::OnViewpointSaved);
+        
+        if (CameraController && CameraController->Categories.Num() > 0)
+        {
+            ViewpointControl->SetViewpointCount(CameraController->Categories[0].Viewpoints.Num());
+            ViewpointControl->SaveInitialState();
+        }
+    }
+    
+    // PhotoCapture (隐藏，功能集成)
+    PhotoCapture = CreateWidget<UPhotoCaptureWidget>(PC, UPhotoCaptureWidget::StaticClass());
+    if (PhotoCapture)
+    {
+        PhotoCapture->InitWidget();
+        
+        if (ViewpointControl)
+        {
+            PhotoCapture->SetViewpointControlRef(ViewpointControl);
+        }
+        
+        PhotoCapture->OnBatchCaptureStart.AddDynamic(this, &AViewerHUD::OnBatchCaptureStart);
+        PhotoCapture->OnResetViewpoints.AddDynamic(this, &AViewerHUD::OnResetViewpoints);
+        
+        if (ParameterDisplay)
+        {
+            ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
+        }
+        
+        AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
+        if (ViewerPawn)
+        {
+            ViewerPawn->PhotoCaptureRef = PhotoCapture;
+        }
     }
     
     // Set input mode to allow UI interaction while keeping game input

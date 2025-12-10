@@ -4,6 +4,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SScrollBox.h"
 #include "Styling/CoreStyle.h"
 
 void UCategoryTabWidget::NativeConstruct()
@@ -13,35 +14,58 @@ void UCategoryTabWidget::NativeConstruct()
 
 TSharedRef<SWidget> UCategoryTabWidget::RebuildWidget()
 {
-    TabContainer = SNew(SHorizontalBox);
+    // 垂直布局 - 左侧面板
+    TabContainer = SNew(SVerticalBox);
     
-    return SNew(SHorizontalBox)
-        // Toggle Button
-        + SHorizontalBox::Slot()
-        .AutoWidth()
+    return SNew(SBorder)
+        .BorderBackgroundColor(FLinearColor(0.08f, 0.08f, 0.1f, 0.95f))
+        .Padding(FMargin(0.0f))
         [
-            SNew(SButton)
-            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.2f, 0.2f, 0.9f))
-            .OnClicked_Lambda([this]() { return OnToggleClicked(); })
-            .ContentPadding(FMargin(10.0f, 8.0f))
-            [
-                SNew(STextBlock)
-                .Text_Lambda([this]() { return FText::FromString(bIsExpanded ? TEXT("◀") : TEXT("▶")); })
-                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 16))
-                .ColorAndOpacity(FLinearColor::White)
-            ]
-        ]
-        // Content
-        + SHorizontalBox::Slot()
-        .AutoWidth()
-        [
-            SAssignNew(ContentBox, SBox)
+            SNew(SVerticalBox)
+            // 标题栏
+            + SVerticalBox::Slot()
+            .AutoHeight()
             [
                 SNew(SBorder)
-                .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.8f))
-                .Padding(FMargin(10.0f))
+                .BorderBackgroundColor(FLinearColor(0.12f, 0.12f, 0.15f, 1.0f))
+                .Padding(FMargin(10.0f, 8.0f))
                 [
-                    TabContainer.ToSharedRef()
+                    SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot()
+                    .FillWidth(1.0f)
+                    [
+                        SNew(STextBlock)
+                        .Text(FText::FromString(TEXT("类别")))
+                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                        .ColorAndOpacity(FLinearColor(0.8f, 0.8f, 0.8f))
+                    ]
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor::Transparent)
+                        .OnClicked_Lambda([this]() { return OnToggleClicked(); })
+                        .ContentPadding(FMargin(4.0f, 0.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text_Lambda([this]() { return FText::FromString(bIsExpanded ? TEXT("▼") : TEXT("▶")); })
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+                            .ColorAndOpacity(FLinearColor(0.6f, 0.6f, 0.6f))
+                        ]
+                    ]
+                ]
+            ]
+            // 类别列表
+            + SVerticalBox::Slot()
+            .FillHeight(1.0f)
+            [
+                SAssignNew(ContentBox, SBox)
+                [
+                    SNew(SScrollBox)
+                    + SScrollBox::Slot()
+                    [
+                        TabContainer.ToSharedRef()
+                    ]
                 ]
             ]
         ];
@@ -68,21 +92,22 @@ void UCategoryTabWidget::CreateTabs()
     for (int32 i = 0; i < Categories.Num(); i++)
     {
         bool bIsSelected = (i == SelectedIndex);
-        FLinearColor ButtonColor = bIsSelected ? FLinearColor(0.2f, 0.5f, 0.8f, 1.0f) : FLinearColor(0.3f, 0.3f, 0.3f, 1.0f);
+        FLinearColor ButtonColor = bIsSelected ? FLinearColor(0.15f, 0.4f, 0.6f, 1.0f) : FLinearColor(0.12f, 0.12f, 0.15f, 1.0f);
+        FLinearColor TextColor = bIsSelected ? FLinearColor::White : FLinearColor(0.7f, 0.7f, 0.7f);
         
         TabContainer->AddSlot()
-            .Padding(FMargin(5.0f, 0.0f))
-            .AutoWidth()
+            .Padding(FMargin(0.0f, 2.0f))
+            .AutoHeight()
             [
                 SNew(SButton)
                 .ButtonColorAndOpacity(ButtonColor)
                 .OnClicked_Lambda([this, i]() { return OnTabClicked(i); })
-                .ContentPadding(FMargin(20.0f, 10.0f))
+                .ContentPadding(FMargin(12.0f, 8.0f))
                 [
                     SNew(STextBlock)
                     .Text(FText::FromString(Categories[i]))
-                    .Font(FCoreStyle::GetDefaultFontStyle("Bold", 16))
-                    .ColorAndOpacity(FLinearColor::White)
+                    .Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
+                    .ColorAndOpacity(TextColor)
                 ]
             ];
     }
