@@ -31,11 +31,17 @@ TSharedRef<SWidget> UMainLayoutWidget::RebuildWidget()
     FLinearColor TextColor = FLinearColor(0.75f, 0.75f, 0.75f);
     
     // 使用 SOverlay 让面板覆盖在3D画面上
-    return SNew(SOverlay)
-        // 第一层：主布局框架
-        + SOverlay::Slot()
+    return SNew(SBox)
+        .HAlign(HAlign_Fill)
+        .VAlign(VAlign_Fill)
         [
-            SNew(SHorizontalBox)
+            SNew(SOverlay)
+            // 第一层：纯色背景框架
+            + SOverlay::Slot()
+            .HAlign(HAlign_Fill)
+            .VAlign(VAlign_Fill)
+            [
+                SNew(SHorizontalBox)
             // ===== 左侧面板 =====
             + SHorizontalBox::Slot()
             .AutoWidth()
@@ -163,7 +169,8 @@ TSharedRef<SWidget> UMainLayoutWidget::RebuildWidget()
                     ]
                 ]
             ]
-        ];
+        ]
+    ];
 }
 
 void UMainLayoutWidget::InitSubWidgets(APlayerController* PC)
