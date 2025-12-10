@@ -15,38 +15,56 @@ void AViewerPlayerController::BeginPlay()
 {
     Super::BeginPlay();
     
-    // 延迟设置视口区域，确保视口完全初始化
-    FTimerHandle TimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+    // 多次尝试设置视口区域，确保生效
+    for (float Delay : {0.1f, 0.5f, 1.0f, 2.0f})
     {
-        // 计算面板占用比例
-        FVector2D ViewportSize;
+        FTimerHandle TimerHandle;
+        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+        {
+            ApplyViewportSeparation();
+        }, Delay, false);
+    }
+}
+
+void AViewerPlayerController::ApplyViewportSeparation()
+{
+    // 计算面板占用比例
+    FVector2D ViewportSize;
+    if (GEngine && GEngine->GameViewport)
+    {
+        GEngine->GameViewport->GetViewportSize(ViewportSize);
+    }
+    else
+    {
+        ViewportSize = FVector2D(1920.0f, 1080.0f);
+    }
+    
+    // 面板尺寸
+    const float LeftPanelWidth = 180.0f;
+    const float RightPanelWidth = 300.0f;
+    const float BottomPanelHeight = 150.0f;
+    
+    // 计算视口区域 (0-1范围)
+    float OriginX = LeftPanelWidth / ViewportSize.X;
+    float OriginY = 0.0f;
+    float SizeX = (ViewportSize.X - LeftPanelWidth - RightPanelWidth) / ViewportSize.X;
+    float SizeY = (ViewportSize.Y - BottomPanelHeight) / ViewportSize.Y;
+    
+    ULocalPlayer* LP = GetLocalPlayer();
+    if (LP)
+    {
+        LP->Origin = FVector2D(OriginX, OriginY);
+        LP->Size = FVector2D(SizeX, SizeY);
+        
+        // 强制更新视口
         if (GEngine && GEngine->GameViewport)
         {
-            GEngine->GameViewport->GetViewportSize(ViewportSize);
-        }
-        else
-        {
-            ViewportSize = FVector2D(1920.0f, 1080.0f);
+            GEngine->GameViewport->Invalidate();
         }
         
-        // 面板尺寸
-        const float LeftPanelWidth = 180.0f;
-        const float RightPanelWidth = 300.0f;
-        const float BottomPanelHeight = 150.0f;
-        
-        // 计算视口区域 (0-1范围)
-        float OriginX = LeftPanelWidth / ViewportSize.X;
-        float OriginY = 0.0f;
-        float SizeX = (ViewportSize.X - LeftPanelWidth - RightPanelWidth) / ViewportSize.X;
-        float SizeY = (ViewportSize.Y - BottomPanelHeight) / ViewportSize.Y;
-        
-        SetViewportRegion(OriginX, OriginY, SizeX, SizeY);
-        
-        UE_LOG(LogTemp, Warning, TEXT("Viewport Region Set: Origin(%.3f, %.3f) Size(%.3f, %.3f)"), 
+        UE_LOG(LogTemp, Warning, TEXT("Viewport Separation Applied: Origin(%.3f, %.3f) Size(%.3f, %.3f)"), 
             OriginX, OriginY, SizeX, SizeY);
-            
-    }, 0.1f, false);
+    }
 }
 
 void AViewerPlayerController::SetViewportRegion(float OriginX, float OriginY, float SizeX, float SizeY)

@@ -29,15 +29,13 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                 .Padding(FMargin(8.0f, 4.0f))
                 [
                     SNew(SHorizontalBox)
-                    // 📷 相机
+                    // 📷 拍照按钮 (直接触发拍照)
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     [
                         SNew(SButton)
-                        .ButtonColorAndOpacity_Lambda([this]() { 
-                            return CurrentMode == EMediaMode::Photo ? FLinearColor(0.2f, 0.5f, 0.8f, 1.0f) : FLinearColor(0.2f, 0.2f, 0.2f, 1.0f); 
-                        })
-                        .OnClicked_Lambda([this]() { return OnPhotoModeClicked(); })
+                        .ButtonColorAndOpacity(FLinearColor(0.2f, 0.5f, 0.8f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnShutterClicked(); })
                         .ContentPadding(FMargin(8.0f, 4.0f))
                         [
                             SNew(STextBlock)

@@ -461,9 +461,13 @@ void AViewerHUD::OnMediaModeChanged(EMediaMode NewMode)
 
 void AViewerHUD::OnMediaPhotoShutter()
 {
+    UE_LOG(LogTemp, Warning, TEXT("OnMediaPhotoShutter called, PhotoCapture=%s"), 
+        PhotoCapture ? TEXT("Valid") : TEXT("NULL"));
+    
     if (PhotoCapture)
     {
         PhotoCapture->CaptureSingle();
+        UE_LOG(LogTemp, Warning, TEXT("CaptureSingle called"));
     }
 }
 
