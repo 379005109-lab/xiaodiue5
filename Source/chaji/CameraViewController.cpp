@@ -116,7 +116,9 @@ void ACameraViewController::AutoConfigureFromCineCameras()
     TArray<AActor*> CameraActors;
     for (AActor* Actor : AllActors)
     {
-        if (Actor->GetActorLabel().Contains(TEXT("镜头")))
+        // 使用 GetName() 替代 GetActorLabel()，因为后者是 Editor-only
+        FString ActorName = Actor->GetName();
+        if (ActorName.Contains(TEXT("镜头")))
         {
             CameraActors.Add(Actor);
         }
@@ -127,7 +129,7 @@ void ACameraViewController::AutoConfigureFromCineCameras()
     
     for (AActor* Actor : CameraActors)
     {
-        FString Name = Actor->GetActorLabel();
+        FString Name = Actor->GetName();
         
         // 提取原始分类名称（例如：休闲椅1镜头1 -> 休闲椅1）
         int32 Index = Name.Find(TEXT("镜头"));
