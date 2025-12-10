@@ -156,6 +156,7 @@ void AViewerHUD::SetupUI()
         
         MediaControl->OnModeChanged.AddDynamic(this, &AViewerHUD::OnMediaModeChanged);
         MediaControl->OnPhotoShutter.AddDynamic(this, &AViewerHUD::OnMediaPhotoShutter);
+        MediaControl->OnBatchCapture.AddDynamic(this, &AViewerHUD::OnMediaBatchCapture);
         MediaControl->OnVideoClipPlay.AddDynamic(this, &AViewerHUD::OnVideoClipPlay);
         MediaControl->OnVideoPlayAll.AddDynamic(this, &AViewerHUD::OnVideoPlayAll);
         MediaControl->OnVideoExport.AddDynamic(this, &AViewerHUD::OnVideoExport);
@@ -464,10 +465,35 @@ void AViewerHUD::OnMediaPhotoShutter()
     UE_LOG(LogTemp, Warning, TEXT("OnMediaPhotoShutter called, PhotoCapture=%s"), 
         PhotoCapture ? TEXT("Valid") : TEXT("NULL"));
     
-    if (PhotoCapture)
+    if (PhotoCapture && MediaControl)
     {
+        // 同步分辨率和比例设置到 PhotoCapture
+        PhotoCapture->SetResolutionIndex(MediaControl->GetResolutionIndex());
+        PhotoCapture->SetAspectRatioIndex(MediaControl->GetAspectRatioIndex());
+        
         PhotoCapture->CaptureSingle();
         UE_LOG(LogTemp, Warning, TEXT("CaptureSingle called"));
+    }
+}
+
+void AViewerHUD::OnMediaBatchCapture()
+{
+    if (PhotoCapture && MediaControl && ViewpointControl)
+    {
+        // 同步分辨率和比例设置
+        PhotoCapture->SetResolutionIndex(MediaControl->GetResolutionIndex());
+        PhotoCapture->SetAspectRatioIndex(MediaControl->GetAspectRatioIndex());
+        
+        // 获取选中的视点并执行批量拍摄
+        TArray<int32> SelectedIndices = ViewpointControl->GetSelectedIndices();
+        if (SelectedIndices.Num() > 0)
+        {
+            PhotoCapture->CaptureMultiple(SelectedIndices);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No viewpoints selected for batch capture"));
+        }
     }
 }
 

@@ -43,6 +43,12 @@ public:
     void CaptureMultiple(const TArray<int32>& Indices);
     void CaptureSingle(); // Take a single screenshot
     
+    // 设置分辨率和比例
+    void SetResolutionIndex(int32 Index) { ResolutionIndex = FMath::Clamp(Index, 0, 2); }
+    void SetAspectRatioIndex(int32 Index) { AspectRatioIndex = FMath::Clamp(Index, 0, 4); }
+    int32 GetResolutionIndex() const { return ResolutionIndex; }
+    int32 GetAspectRatioIndex() const { return AspectRatioIndex; }
+    
     // Called from PlayerController for scroll wheel shortcuts
     void AdjustFocalLength(float Delta);
     void AdjustAperture(float Delta);

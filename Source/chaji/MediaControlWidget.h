@@ -16,6 +16,7 @@ enum class EMediaMode : uint8
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMediaModeChanged, EMediaMode, NewMode);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPhotoShutter);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBatchCapture);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVideoClipPlay, int32, ClipIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVideoPlayAll);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVideoExport);
@@ -56,6 +57,13 @@ public:
     FOnPhotoShutter OnPhotoShutter;
     
     UPROPERTY(BlueprintAssignable)
+    FOnBatchCapture OnBatchCapture;
+    
+    // 分辨率和比例
+    int32 GetResolutionIndex() const { return ResolutionIndex; }
+    int32 GetAspectRatioIndex() const { return AspectRatioIndex; }
+    
+    UPROPERTY(BlueprintAssignable)
     FOnVideoClipPlay OnVideoClipPlay;
     
     UPROPERTY(BlueprintAssignable)
@@ -91,6 +99,8 @@ private:
     TSharedPtr<class SBox> PhotoPanel;
     TSharedPtr<class SBox> VideoPanel;
     TSharedPtr<class SSlider> TimelineSlider;
+    TSharedPtr<class STextBlock> ResolutionText;
+    TSharedPtr<class STextBlock> AspectRatioText;
     
     // State
     EMediaMode CurrentMode = EMediaMode::None;
@@ -121,4 +131,11 @@ private:
     FReply OnExportClicked();
     FReply OnDeleteClip(int32 Index);
     void OnTimelineValueChanged(float NewValue);
+    
+    // 相机功能回调
+    FReply OnBatchCaptureClicked();
+    FReply OnResolutionClicked();
+    FReply OnAspectRatioClicked();
+    void UpdateResolutionText();
+    void UpdateAspectRatioText();
 };

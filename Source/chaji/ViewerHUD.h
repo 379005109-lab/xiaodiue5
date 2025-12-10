@@ -94,6 +94,9 @@ private:
     void OnMediaPhotoShutter();
     
     UFUNCTION()
+    void OnMediaBatchCapture();
+    
+    UFUNCTION()
     void OnVideoClipPlay(int32 ClipIndex);
     
     UFUNCTION()

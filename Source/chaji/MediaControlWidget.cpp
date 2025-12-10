@@ -29,7 +29,7 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                 .Padding(FMargin(8.0f, 4.0f))
                 [
                     SNew(SHorizontalBox)
-                    // 📷 拍照按钮 (直接触发拍照)
+                    // 📷 单拍
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     [
@@ -44,10 +44,67 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                             .ColorAndOpacity(FLinearColor::White)
                         ]
                     ]
-                    // 🎬 视频
+                    // 📸 连拍 (批量拍摄选中视点)
                     + SHorizontalBox::Slot()
                     .AutoWidth()
                     .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.3f, 0.6f, 0.4f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnBatchCaptureClicked(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("📸连拍")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 分辨率选择
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.25f, 0.25f, 0.3f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnResolutionClicked(); })
+                        .ContentPadding(FMargin(6.0f, 4.0f))
+                        [
+                            SAssignNew(ResolutionText, STextBlock)
+                            .Text(FText::FromString(TEXT("1K")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 比例选择
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.25f, 0.25f, 0.3f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnAspectRatioClicked(); })
+                        .ContentPadding(FMargin(6.0f, 4.0f))
+                        [
+                            SAssignNew(AspectRatioText, STextBlock)
+                            .Text(FText::FromString(TEXT("16:9")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 分隔
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(8.0f, 0.0f))
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(STextBlock)
+                        .Text(FText::FromString(TEXT("|")))
+                        .ColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.3f))
+                    ]
+                    // 🎬 视频
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
                     [
                         SNew(SButton)
                         .ButtonColorAndOpacity_Lambda([this]() { 
@@ -740,4 +797,60 @@ void UMediaControlWidget::UpdateTotalTime()
 void UMediaControlWidget::UpdateTimelineFromClips()
 {
     UpdateTotalTime();
+}
+
+FReply UMediaControlWidget::OnBatchCaptureClicked()
+{
+    OnBatchCapture.Broadcast();
+    if (StatusText.IsValid())
+    {
+        StatusText->SetText(FText::FromString(TEXT("📸 连拍选中视点...")));
+    }
+    return FReply::Handled();
+}
+
+FReply UMediaControlWidget::OnResolutionClicked()
+{
+    // 循环切换分辨率: 1K -> 2K -> 4K -> 1K
+    ResolutionIndex = (ResolutionIndex + 1) % 3;
+    UpdateResolutionText();
+    
+    if (StatusText.IsValid())
+    {
+        FString ResNames[] = {TEXT("1K (1080p)"), TEXT("2K (1440p)"), TEXT("4K (2160p)")};
+        StatusText->SetText(FText::FromString(FString::Printf(TEXT("分辨率: %s"), *ResNames[ResolutionIndex])));
+    }
+    return FReply::Handled();
+}
+
+FReply UMediaControlWidget::OnAspectRatioClicked()
+{
+    // 循环切换比例: 16:9 -> 9:16 -> 1:1 -> 3:2 -> 2:3 -> 16:9
+    AspectRatioIndex = (AspectRatioIndex + 1) % 5;
+    UpdateAspectRatioText();
+    
+    if (StatusText.IsValid())
+    {
+        FString RatioNames[] = {TEXT("16:9"), TEXT("9:16"), TEXT("1:1"), TEXT("3:2"), TEXT("2:3")};
+        StatusText->SetText(FText::FromString(FString::Printf(TEXT("比例: %s"), *RatioNames[AspectRatioIndex])));
+    }
+    return FReply::Handled();
+}
+
+void UMediaControlWidget::UpdateResolutionText()
+{
+    if (ResolutionText.IsValid())
+    {
+        FString ResNames[] = {TEXT("1K"), TEXT("2K"), TEXT("4K")};
+        ResolutionText->SetText(FText::FromString(ResNames[ResolutionIndex]));
+    }
+}
+
+void UMediaControlWidget::UpdateAspectRatioText()
+{
+    if (AspectRatioText.IsValid())
+    {
+        FString RatioNames[] = {TEXT("16:9"), TEXT("9:16"), TEXT("1:1"), TEXT("3:2"), TEXT("2:3")};
+        AspectRatioText->SetText(FText::FromString(RatioNames[AspectRatioIndex]));
+    }
 }
