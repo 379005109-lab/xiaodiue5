@@ -12,457 +12,266 @@
 
 TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
 {
-    return SNew(SVerticalBox)
-        // 顶部模式选择图标
-        + SVerticalBox::Slot()
-        .AutoHeight()
+    // 时间轴宽度
+    const float TimelineWidth = 1200.0f;
+    
+    return SNew(SBorder)
+        .BorderBackgroundColor(FLinearColor(0.06f, 0.06f, 0.08f, 1.0f))
+        .Padding(FMargin(0.0f))
         [
-            SNew(SBorder)
-            .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.1f, 0.95f))
-            .Padding(FMargin(8.0f, 6.0f))
-            [
-                SNew(SHorizontalBox)
-                // 相机图标
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                [
-                    SNew(SButton)
-                    .ButtonColorAndOpacity_Lambda([this]() { 
-                        return CurrentMode == EMediaMode::Photo ? FLinearColor(0.2f, 0.5f, 0.8f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); 
-                    })
-                    .OnClicked_Lambda([this]() { return OnPhotoModeClicked(); })
-                    .ContentPadding(FMargin(12.0f, 8.0f))
-                    [
-                        SNew(STextBlock)
-                        .Text(FText::FromString(TEXT("📷")))
-                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
-                        .ColorAndOpacity(FLinearColor::White)
-                    ]
-                ]
-                // 视频图标
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
-                [
-                    SNew(SButton)
-                    .ButtonColorAndOpacity_Lambda([this]() { 
-                        return CurrentMode == EMediaMode::Video ? FLinearColor(0.8f, 0.3f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); 
-                    })
-                    .OnClicked_Lambda([this]() { return OnVideoModeClicked(); })
-                    .ContentPadding(FMargin(12.0f, 8.0f))
-                    [
-                        SNew(STextBlock)
-                        .Text(FText::FromString(TEXT("🎬")))
-                        .Font(FCoreStyle::GetDefaultFontStyle("Bold", 18))
-                        .ColorAndOpacity(FLinearColor::White)
-                    ]
-                ]
-                // 状态文本
-                + SHorizontalBox::Slot()
-                .FillWidth(1.0f)
-                .Padding(FMargin(12.0f, 0.0f, 0.0f, 0.0f))
-                .VAlign(VAlign_Center)
-                [
-                    SAssignNew(StatusText, STextBlock)
-                    .Text(FText::FromString(TEXT("选择模式")))
-                    .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                    .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
-                ]
-            ]
-        ]
-        // 相机面板
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        [
-            SAssignNew(PhotoPanel, SBox)
-            .Visibility_Lambda([this]() { return CurrentMode == EMediaMode::Photo ? EVisibility::Visible : EVisibility::Collapsed; })
+            SNew(SVerticalBox)
+            // 顶部工具栏
+            + SVerticalBox::Slot()
+            .AutoHeight()
             [
                 SNew(SBorder)
-                .BorderBackgroundColor(FLinearColor(0.08f, 0.08f, 0.1f, 0.98f))
-                .Padding(FMargin(10.0f))
+                .BorderBackgroundColor(FLinearColor(0.1f, 0.1f, 0.12f, 1.0f))
+                .Padding(FMargin(8.0f, 4.0f))
                 [
-                    SNew(SVerticalBox)
-                    // 快门按钮 + 打开文件夹 + 恢复默认
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
+                    SNew(SHorizontalBox)
+                    // 📷 相机
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
                     [
-                        SNew(SHorizontalBox)
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
+                        SNew(SButton)
+                        .ButtonColorAndOpacity_Lambda([this]() { 
+                            return CurrentMode == EMediaMode::Photo ? FLinearColor(0.2f, 0.5f, 0.8f, 1.0f) : FLinearColor(0.2f, 0.2f, 0.2f, 1.0f); 
+                        })
+                        .OnClicked_Lambda([this]() { return OnPhotoModeClicked(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
                         [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.5f, 0.8f, 1.0f))
-                            .OnClicked_Lambda([this]() { return OnShutterClicked(); })
-                            .ContentPadding(FMargin(15.0f, 6.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("📷 快门")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 11))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.3f, 0.4f, 0.3f, 1.0f))
-                            .OnClicked_Lambda([this]() { 
-                                OnOpenFolder.Broadcast();
-                                return FReply::Handled(); 
-                            })
-                            .ContentPadding(FMargin(10.0f, 6.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("📁 文件夹")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.4f, 0.3f, 0.3f, 1.0f))
-                            .OnClicked_Lambda([this]() { 
-                                OnResetCamera.Broadcast();
-                                return FReply::Handled(); 
-                            })
-                            .ContentPadding(FMargin(10.0f, 6.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("恢复默认")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("📷")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
+                            .ColorAndOpacity(FLinearColor::White)
                         ]
                     ]
-                    // 分辨率选择
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 6.0f, 0.0f, 0.0f))
+                    // 🎬 视频
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
                     [
-                        SNew(SHorizontalBox)
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
+                        SNew(SButton)
+                        .ButtonColorAndOpacity_Lambda([this]() { 
+                            return CurrentMode == EMediaMode::Video ? FLinearColor(0.7f, 0.25f, 0.2f, 1.0f) : FLinearColor(0.2f, 0.2f, 0.2f, 1.0f); 
+                        })
+                        .OnClicked_Lambda([this]() { return OnVideoModeClicked(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
                         [
-                            SNew(SBox)
-                            .WidthOverride(55.0f)
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("分辨率")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
-                                .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { ResolutionIndex = 0; return FReply::Handled(); })
-                            .ContentPadding(FMargin(8.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("1K")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { ResolutionIndex = 1; return FReply::Handled(); })
-                            .ContentPadding(FMargin(8.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("2K")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return ResolutionIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { ResolutionIndex = 2; return FReply::Handled(); })
-                            .ContentPadding(FMargin(8.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("4K")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("🎬")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
+                            .ColorAndOpacity(FLinearColor::White)
                         ]
                     ]
-                    // 比例选择
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 4.0f, 0.0f, 0.0f))
+                    // 分隔
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(8.0f, 0.0f))
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(STextBlock)
+                        .Text(FText::FromString(TEXT("|")))
+                        .ColorAndOpacity(FLinearColor(0.3f, 0.3f, 0.3f))
+                    ]
+                    // + 添加
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.2f, 0.4f, 0.25f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnAddClip(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("+ 添加")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 首帧
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity_Lambda([this]() { return bIsSettingStart ? FLinearColor(0.25f, 0.5f, 0.25f, 1.0f) : FLinearColor(0.2f, 0.35f, 0.4f, 1.0f); })
+                        .OnClicked_Lambda([this]() { return OnSetStartClicked(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("首帧")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 尾帧
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity_Lambda([this]() { return !bIsSettingStart ? FLinearColor(0.5f, 0.25f, 0.25f, 1.0f) : FLinearColor(0.4f, 0.25f, 0.2f, 1.0f); })
+                        .OnClicked_Lambda([this]() { return OnSetEndClicked(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("尾帧")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // ▶ 播放
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(8.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.25f, 0.45f, 0.25f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnPlayAllClicked(); })
+                        .ContentPadding(FMargin(10.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("▶ 播放")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 导出
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.4f, 0.25f, 0.45f, 1.0f))
+                        .OnClicked_Lambda([this]() { return OnExportClicked(); })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("导出")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 时间显示
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(12.0f, 0.0f, 0.0f, 0.0f))
+                    .VAlign(VAlign_Center)
+                    [
+                        SAssignNew(TotalTimeText, STextBlock)
+                        .Text(FText::FromString(TEXT("00:00 / 00:00")))
+                        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                        .ColorAndOpacity(FLinearColor(0.5f, 0.8f, 1.0f))
+                    ]
+                    // 分隔
+                    + SHorizontalBox::Slot()
+                    .FillWidth(1.0f)
+                    []
+                    // 📁 文件夹
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.25f, 0.35f, 0.25f, 1.0f))
+                        .OnClicked_Lambda([this]() { 
+                            OnOpenFolder.Broadcast();
+                            return FReply::Handled(); 
+                        })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("📁")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 恢复
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.35f, 0.25f, 0.25f, 1.0f))
+                        .OnClicked_Lambda([this]() { 
+                            OnResetCamera.Broadcast();
+                            return FReply::Handled(); 
+                        })
+                        .ContentPadding(FMargin(8.0f, 4.0f))
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("恢复")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
+                            .ColorAndOpacity(FLinearColor::White)
+                        ]
+                    ]
+                    // 状态
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .Padding(FMargin(8.0f, 0.0f, 0.0f, 0.0f))
+                    .VAlign(VAlign_Center)
+                    [
+                        SAssignNew(StatusText, STextBlock)
+                        .Text(FText::FromString(TEXT("")))
+                        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
+                        .ColorAndOpacity(FLinearColor(0.5f, 0.5f, 0.5f))
+                    ]
+                ]
+            ]
+            // 时间刻度线
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            [
+                SNew(SBox)
+                .HeightOverride(20.0f)
+                [
+                    SNew(SBorder)
+                    .BorderBackgroundColor(FLinearColor(0.08f, 0.08f, 0.1f, 1.0f))
+                    .Padding(FMargin(0.0f))
                     [
                         SNew(SHorizontalBox)
                         + SHorizontalBox::Slot()
-                        .AutoWidth()
+                        .FillWidth(1.0f)
                         .VAlign(VAlign_Center)
                         [
-                            SNew(SBox)
-                            .WidthOverride(55.0f)
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("比例")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 9))
-                                .ColorAndOpacity(FLinearColor(0.7f, 0.7f, 0.7f))
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 0 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { AspectRatioIndex = 0; return FReply::Handled(); })
-                            .ContentPadding(FMargin(6.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("16:9")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 1 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { AspectRatioIndex = 1; return FReply::Handled(); })
-                            .ContentPadding(FMargin(6.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("9:16")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 2 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { AspectRatioIndex = 2; return FReply::Handled(); })
-                            .ContentPadding(FMargin(6.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("1:1")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(3.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return AspectRatioIndex == 3 ? FLinearColor(0.2f, 0.6f, 0.2f, 1.0f) : FLinearColor(0.25f, 0.25f, 0.25f, 1.0f); })
-                            .OnClicked_Lambda([this]() { AspectRatioIndex = 3; return FReply::Handled(); })
-                            .ContentPadding(FMargin(6.0f, 3.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("3:2")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("  00:00    |    00:02    |    00:04    |    00:06    |    00:08    |    00:10    |    00:12    |    00:14    |    00:16    |    00:18    |    00:20    |    00:22    |    00:24    |    00:26    |    00:28    |    00:30")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
+                            .ColorAndOpacity(FLinearColor(0.45f, 0.45f, 0.45f))
                         ]
                     ]
                 ]
             ]
-        ]
-        // 视频面板
-        + SVerticalBox::Slot()
-        .AutoHeight()
-        [
-            SAssignNew(VideoPanel, SBox)
-            .Visibility_Lambda([this]() { return CurrentMode == EMediaMode::Video ? EVisibility::Visible : EVisibility::Collapsed; })
+            // 时间轴滑块/光标
+            + SVerticalBox::Slot()
+            .AutoHeight()
             [
-                SNew(SBorder)
-                .BorderBackgroundColor(FLinearColor(0.08f, 0.08f, 0.1f, 0.98f))
-                .Padding(FMargin(10.0f))
+                SNew(SBox)
+                .HeightOverride(14.0f)
                 [
-                    SNew(SVerticalBox)
-                    // 控制按钮行
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
+                    SAssignNew(TimelineSlider, SSlider)
+                    .Value_Lambda([this]() { return TotalDuration > 0 ? TimelinePosition / TotalDuration : 0.0f; })
+                    .OnValueChanged_Lambda([this](float NewValue) { OnTimelineValueChanged(NewValue); })
+                    .SliderBarColor(FLinearColor(0.12f, 0.12f, 0.15f))
+                    .SliderHandleColor(FLinearColor(1.0f, 1.0f, 1.0f))
+                ]
+            ]
+            // 视频轨道
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            [
+                SNew(SBox)
+                .HeightOverride(55.0f)
+                [
+                    SNew(SBorder)
+                    .BorderBackgroundColor(FLinearColor(0.04f, 0.08f, 0.1f, 1.0f))
+                    .Padding(FMargin(0.0f, 2.0f))
                     [
-                        SNew(SHorizontalBox)
-                        // + 添加
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
+                        SNew(SScrollBox)
+                        .Orientation(Orient_Horizontal)
+                        + SScrollBox::Slot()
                         [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.2f, 0.5f, 0.3f, 1.0f))
-                            .OnClicked_Lambda([this]() { return OnAddClip(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("+ 添加")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        // 首帧
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return bIsSettingStart ? FLinearColor(0.3f, 0.6f, 0.3f, 1.0f) : FLinearColor(0.2f, 0.4f, 0.5f, 1.0f); })
-                            .OnClicked_Lambda([this]() { return OnSetStartClicked(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("首帧")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        // 尾帧
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity_Lambda([this]() { return !bIsSettingStart ? FLinearColor(0.6f, 0.3f, 0.3f, 1.0f) : FLinearColor(0.5f, 0.3f, 0.2f, 1.0f); })
-                            .OnClicked_Lambda([this]() { return OnSetEndClicked(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("尾帧")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        // 播放全部
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(6.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.3f, 0.5f, 0.3f, 1.0f))
-                            .OnClicked_Lambda([this]() { return OnPlayAllClicked(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("▶ 播放")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        // 导出
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(4.0f, 0.0f, 0.0f, 0.0f))
-                        [
-                            SNew(SButton)
-                            .ButtonColorAndOpacity(FLinearColor(0.5f, 0.3f, 0.5f, 1.0f))
-                            .OnClicked_Lambda([this]() { return OnExportClicked(); })
-                            .ContentPadding(FMargin(10.0f, 5.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("导出")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
-                                .ColorAndOpacity(FLinearColor::White)
-                            ]
-                        ]
-                        // 总时长
-                        + SHorizontalBox::Slot()
-                        .AutoWidth()
-                        .Padding(FMargin(10.0f, 0.0f, 0.0f, 0.0f))
-                        .VAlign(VAlign_Center)
-                        [
-                            SAssignNew(TotalTimeText, STextBlock)
-                            .Text(FText::FromString(TEXT("00:00")))
-                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 11))
-                            .ColorAndOpacity(FLinearColor(0.3f, 0.8f, 1.0f))
-                        ]
-                    ]
-                    // 时间刻度线 (剪映风格)
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
-                    [
-                        SNew(SBox)
-                        .WidthOverride(700.0f)
-                        .HeightOverride(22.0f)
-                        [
-                            SNew(SBorder)
-                            .BorderBackgroundColor(FLinearColor(0.12f, 0.12f, 0.14f, 1.0f))
-                            .Padding(FMargin(0.0f))
-                            [
-                                SNew(SHorizontalBox)
-                                + SHorizontalBox::Slot()
-                                .FillWidth(1.0f)
-                                [
-                                    SNew(STextBlock)
-                                    .Text(FText::FromString(TEXT("00:00   |   00:02   |   00:04   |   00:06   |   00:08   |   00:10   |   00:12   |   00:14   |   00:16   |   00:18   |   00:20")))
-                                    .Font(FCoreStyle::GetDefaultFontStyle("Regular", 8))
-                                    .ColorAndOpacity(FLinearColor(0.55f, 0.55f, 0.55f))
-                                ]
-                            ]
-                        ]
-                    ]
-                    // 时间轴光标区域
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    [
-                        SNew(SBox)
-                        .WidthOverride(700.0f)
-                        .HeightOverride(16.0f)
-                        [
-                            SNew(SOverlay)
-                            // 滑块背景
-                            + SOverlay::Slot()
-                            [
-                                SNew(SBorder)
-                                .BorderBackgroundColor(FLinearColor(0.08f, 0.08f, 0.1f, 1.0f))
-                            ]
-                            // 滑块
-                            + SOverlay::Slot()
-                            [
-                                SAssignNew(TimelineSlider, SSlider)
-                                .Value_Lambda([this]() { return TotalDuration > 0 ? TimelinePosition / TotalDuration : 0.0f; })
-                                .OnValueChanged_Lambda([this](float NewValue) { OnTimelineValueChanged(NewValue); })
-                                .SliderBarColor(FLinearColor(0.15f, 0.15f, 0.18f))
-                                .SliderHandleColor(FLinearColor(1.0f, 1.0f, 1.0f))
-                            ]
-                        ]
-                    ]
-                    // 视频轨道 (与时间轴对齐)
-                    + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(FMargin(0.0f, 2.0f, 0.0f, 0.0f))
-                    [
-                        SNew(SBox)
-                        .WidthOverride(700.0f)
-                        .HeightOverride(70.0f)
-                        [
-                            SNew(SBorder)
-                            .BorderBackgroundColor(FLinearColor(0.06f, 0.12f, 0.14f, 1.0f))
-                            .Padding(FMargin(0.0f))
-                            [
-                                SNew(SScrollBox)
-                                .Orientation(Orient_Horizontal)
-                                + SScrollBox::Slot()
-                                [
-                                    SAssignNew(ClipTrackContainer, SHorizontalBox)
-                                ]
-                            ]
+                            SAssignNew(ClipTrackContainer, SHorizontalBox)
                         ]
                     ]
                 ]

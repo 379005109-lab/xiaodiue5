@@ -97,13 +97,20 @@ void AViewerHUD::SetupUI()
         ViewportSize = FVector2D(1920.0f, 1080.0f); // Default fallback
     }
     
-    // Create the viewpoint control widget (bottom-left, photos/viewpoints area)
+    // ============ 剪映风格布局 ============
+    // 画面区域: 顶部40px留给标签，底部200px留给时间轴和镜头
+    // 右侧200px留给参数面板
+    
+    // 类别标签栏 (顶部，画面外)
+    // TabWidget 已经在上面创建，位置在最顶部
+    
+    // 多镜头缩略图 (底部，画面外正下方)
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(9);
-        float PosX = ViewportSize.X * 0.02f;
-        float PosY = ViewportSize.Y * 0.92f; // Very bottom
+        float PosX = 10.0f;
+        float PosY = ViewportSize.Y - 90.0f; // 最底部
         ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
         
         // Bind viewpoint change event
@@ -118,26 +125,20 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create the photo capture widget (hidden - now integrated into MediaControl)
+    // PhotoCapture (隐藏，功能集成到MediaControl)
     PhotoCapture = CreateWidget<UPhotoCaptureWidget>(PC, UPhotoCaptureWidget::StaticClass());
     if (PhotoCapture)
     {
-        // Don't add to viewport - now handled by MediaControl
         PhotoCapture->InitWidget();
         
-        // Set reference to viewpoint control for batch capture
         if (ViewpointControl)
         {
             PhotoCapture->SetViewpointControlRef(ViewpointControl);
         }
         
-        // Bind batch capture event
         PhotoCapture->OnBatchCaptureStart.AddDynamic(this, &AViewerHUD::OnBatchCaptureStart);
-        
-        // Bind reset viewpoints event
         PhotoCapture->OnResetViewpoints.AddDynamic(this, &AViewerHUD::OnResetViewpoints);
         
-        // Set reference to pawn for shortcuts
         AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn());
         if (ViewerPawn)
         {
@@ -145,24 +146,24 @@ void AViewerHUD::SetupUI()
         }
     }
     
-    // Create parameter display widget (top center)
+    // 参数显示 (右侧，画面外)
     ParameterDisplay = CreateWidget<UParameterDisplayWidget>(PC, UParameterDisplayWidget::StaticClass());
     if (ParameterDisplay)
     {
         ParameterDisplay->AddToViewport(10);
-        float PosX = ViewportSize.X * 0.35f;
-        float PosY = ViewportSize.Y * 0.02f;
+        float PosX = ViewportSize.X - 220.0f; // 右侧
+        float PosY = 50.0f; // 顶部下方
         ParameterDisplay->SetPositionInViewport(FVector2D(PosX, PosY));
         ParameterDisplay->SetPhotoCaptureRef(PhotoCapture);
     }
     
-    // Create media control widget (bottom-left)
+    // 媒体控制 + 时间轴 (底部，画面外)
     MediaControl = CreateWidget<UMediaControlWidget>(PC, UMediaControlWidget::StaticClass());
     if (MediaControl)
     {
         MediaControl->AddToViewport(10);
-        float PosX = ViewportSize.X * 0.02f;
-        float PosY = ViewportSize.Y * 0.70f;
+        float PosX = 10.0f;
+        float PosY = ViewportSize.Y - 200.0f; // 底部时间轴区域
         MediaControl->SetPositionInViewport(FVector2D(PosX, PosY));
         MediaControl->InitWidget();
         
