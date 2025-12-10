@@ -29,10 +29,8 @@ TSharedRef<SWidget> UMainLayoutWidget::RebuildWidget()
     FLinearColor HeaderBgColor = FLinearColor(0.1f, 0.1f, 0.12f, 1.0f);
     FLinearColor TextColor = FLinearColor(0.75f, 0.75f, 0.75f);
     
-    // 初始化 ViewportBrush (稍后通过 SetRenderTarget 设置纹理)
-    ViewportBrush.DrawAs = ESlateBrushDrawType::Image;
-    ViewportBrush.Tiling = ESlateBrushTileType::NoTile;
-    ViewportBrush.ImageSize = FVector2D(1440.0f, 930.0f); // 默认大小
+    // 中间区域保持透明，让3D画面显示
+    // 使用不透明的边框面板来"遮挡"边缘的3D画面，实现视觉分离
     
     // 主布局
     return SNew(SBox)
@@ -77,17 +75,12 @@ TSharedRef<SWidget> UMainLayoutWidget::RebuildWidget()
             .FillWidth(1.0f)
             [
                 SNew(SVerticalBox)
-                // 3D画面区域 - 显示 RenderTarget 纹理
+                // 3D画面区域 - 保持透明，让底层3D画面显示
                 + SVerticalBox::Slot()
                 .FillHeight(1.0f)
                 [
-                    SNew(SBorder)
-                    .BorderBackgroundColor(FLinearColor(0.02f, 0.02f, 0.03f, 1.0f)) // 深黑色背景
-                    .Padding(FMargin(2.0f))
-                    [
-                        SAssignNew(ViewportImage, SImage)
-                        .Image(&ViewportBrush)
-                    ]
+                    SAssignNew(ViewportContainer, SBox)
+                    // 透明区域，3D画面从这里显示
                 ]
                 // 底部面板
                 + SVerticalBox::Slot()
@@ -142,18 +135,8 @@ TSharedRef<SWidget> UMainLayoutWidget::RebuildWidget()
 
 void UMainLayoutWidget::SetRenderTarget(UTextureRenderTarget2D* InRenderTarget)
 {
-    if (InRenderTarget && ViewportImage.IsValid())
-    {
-        // 设置渲染纹理到画刷
-        ViewportBrush.SetResourceObject(InRenderTarget);
-        ViewportBrush.ImageSize = FVector2D(InRenderTarget->SizeX, InRenderTarget->SizeY);
-        
-        // 更新 SImage
-        ViewportImage->SetImage(&ViewportBrush);
-        
-        UE_LOG(LogTemp, Warning, TEXT("RenderTarget set to MainLayout: %dx%d"), 
-            InRenderTarget->SizeX, InRenderTarget->SizeY);
-    }
+    // SceneCapture 功能已禁用，使用 UI 覆盖方案
+    // 此方法保留以保持接口兼容性
 }
 
 void UMainLayoutWidget::InitSubWidgets(APlayerController* PC)
