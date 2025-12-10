@@ -22,7 +22,13 @@ public:
 
 protected:
     virtual void SetupInputComponent() override;
+    virtual void BeginPlay() override;
     
     void OnScrollUp();
     void OnScrollDown();
+    
+public:
+    // 设置视口区域 (0-1范围)
+    UFUNCTION(BlueprintCallable)
+    void SetViewportRegion(float OriginX, float OriginY, float SizeX, float SizeY);
 };

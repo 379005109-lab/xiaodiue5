@@ -69,31 +69,8 @@ void AViewerHUD::SetupUI()
     if (!PC) return;
     
     // ============ 全屏主布局 ============
-    // 创建全屏主布局Widget，覆盖整个屏幕
-    // 左侧、右侧、底部是不透明面板
-    // 中间是透明区域，显示3D画面
-    
-    MainLayout = CreateWidget<UMainLayoutWidget>(PC, UMainLayoutWidget::StaticClass());
-    if (MainLayout)
-    {
-        MainLayout->AddToViewport(5); // 较低层级，让子Widget可以在上面
-    }
-    
-    // 创建类别标签 (左侧面板)
-    TabWidget = CreateWidget<UCategoryTabWidget>(PC, UCategoryTabWidget::StaticClass());
-    if (TabWidget)
-    {
-        TabWidget->AddToViewport(10);
-        TabWidget->SetPositionInViewport(FVector2D(5.0f, 40.0f));
-        
-        TabWidget->OnCategorySelected.AddDynamic(this, &AViewerHUD::OnCategorySelected);
-        
-        if (CameraController)
-        {
-            TArray<FString> Names = CameraController->GetCategoryNames();
-            TabWidget->SetCategories(Names);
-        }
-    }
+    // 3D视口通过 ViewerPlayerController::SetViewportRegion 已经设置为中间区域
+    // 这里创建全屏UI布局，左侧/右侧/底部是不透明深色面板
     
     // 获取视口大小
     FVector2D ViewportSize;
@@ -106,28 +83,54 @@ void AViewerHUD::SetupUI()
         ViewportSize = FVector2D(1920.0f, 1080.0f);
     }
     
-    // 面板尺寸
+    // 面板尺寸 (与 ViewerPlayerController 中的视口设置对应)
     const float LeftPanelWidth = 180.0f;
     const float RightPanelWidth = 300.0f;
     const float BottomPanelHeight = 150.0f;
     
-    // 右侧面板: 参数显示
+    // 创建全屏主布局
+    MainLayout = CreateWidget<UMainLayoutWidget>(PC, UMainLayoutWidget::StaticClass());
+    if (MainLayout)
+    {
+        MainLayout->AddToViewport(1); // 最底层
+        MainLayout->SetDesiredSizeInViewport(ViewportSize);
+        MainLayout->SetPositionInViewport(FVector2D(0.0f, 0.0f));
+        MainLayout->SetAlignmentInViewport(FVector2D(0.0f, 0.0f));
+    }
+    
+    // 类别标签 (左侧面板内)
+    TabWidget = CreateWidget<UCategoryTabWidget>(PC, UCategoryTabWidget::StaticClass());
+    if (TabWidget)
+    {
+        TabWidget->AddToViewport(10);
+        TabWidget->SetPositionInViewport(FVector2D(5.0f, 35.0f));
+        
+        TabWidget->OnCategorySelected.AddDynamic(this, &AViewerHUD::OnCategorySelected);
+        
+        if (CameraController)
+        {
+            TArray<FString> Names = CameraController->GetCategoryNames();
+            TabWidget->SetCategories(Names);
+        }
+    }
+    
+    // 参数显示 (右侧面板内)
     ParameterDisplay = CreateWidget<UParameterDisplayWidget>(PC, UParameterDisplayWidget::StaticClass());
     if (ParameterDisplay)
     {
         ParameterDisplay->AddToViewport(10);
-        float PosX = ViewportSize.X - RightPanelWidth + 10.0f;
-        float PosY = 40.0f;
+        float PosX = ViewportSize.X - RightPanelWidth + 8.0f;
+        float PosY = 35.0f;
         ParameterDisplay->SetPositionInViewport(FVector2D(PosX, PosY));
     }
     
-    // 底部面板: 媒体控制 + 时间轴
+    // 媒体控制 + 时间轴 (底部面板内)
     MediaControl = CreateWidget<UMediaControlWidget>(PC, UMediaControlWidget::StaticClass());
     if (MediaControl)
     {
         MediaControl->AddToViewport(10);
-        float PosX = LeftPanelWidth + 10.0f;
-        float PosY = ViewportSize.Y - BottomPanelHeight + 5.0f;
+        float PosX = LeftPanelWidth + 8.0f;
+        float PosY = ViewportSize.Y - BottomPanelHeight + 8.0f;
         MediaControl->SetPositionInViewport(FVector2D(PosX, PosY));
         MediaControl->InitWidget();
         
@@ -143,13 +146,13 @@ void AViewerHUD::SetupUI()
         MediaControl->OnResetCamera.AddDynamic(this, &AViewerHUD::OnResetCamera);
     }
     
-    // 底部: 多镜头缩略图
+    // 多镜头缩略图 (底部面板内)
     ViewpointControl = CreateWidget<UViewpointControlWidget>(PC, UViewpointControlWidget::StaticClass());
     if (ViewpointControl)
     {
         ViewpointControl->AddToViewport(10);
-        float PosX = LeftPanelWidth + 10.0f;
-        float PosY = ViewportSize.Y - 70.0f;
+        float PosX = LeftPanelWidth + 8.0f;
+        float PosY = ViewportSize.Y - 65.0f;
         ViewpointControl->SetPositionInViewport(FVector2D(PosX, PosY));
         
         ViewpointControl->OnViewpointChanged.AddDynamic(this, &AViewerHUD::OnViewpointChanged);

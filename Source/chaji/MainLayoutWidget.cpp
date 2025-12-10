@@ -13,124 +13,118 @@
 
 TSharedRef<SWidget> UMainLayoutWidget::RebuildWidget()
 {
-    // 主布局：全屏，左中右三列 + 底部
-    // 左侧：类别标签 (180px)
-    // 中间：3D画面预览区 (透明，让游戏画面显示)
-    // 右侧：参数面板 (300px)
-    // 底部：时间轴 + 多镜头 (150px)
+    // ============ 全屏主布局 ============
+    // 视口已经通过 LocalPlayer 设置为中间区域
+    // 这里只需要在左侧、右侧、底部放置不透明的深色面板
+    // 
+    // 布局 (1920x1080 为例):
+    // 左侧面板: 180px (约9.4%)
+    // 右侧面板: 300px (约15.6%)
+    // 底部面板: 150px (约13.9%)
+    // 中间3D画面: 剩余区域 (视口自动渲染到这里)
     
     const float LeftPanelWidth = 180.0f;
     const float RightPanelWidth = 300.0f;
     const float BottomPanelHeight = 150.0f;
-    FLinearColor PanelBgColor = FLinearColor(0.08f, 0.08f, 0.1f, 1.0f); // 深色背景
-    FLinearColor BorderColor = FLinearColor(0.15f, 0.15f, 0.18f, 1.0f);
+    FLinearColor PanelBgColor = FLinearColor(0.06f, 0.06f, 0.08f, 1.0f); // 深色不透明背景
+    FLinearColor HeaderBgColor = FLinearColor(0.1f, 0.1f, 0.12f, 1.0f);
+    FLinearColor TextColor = FLinearColor(0.75f, 0.75f, 0.75f);
     
-    return SNew(SOverlay)
-        // 全屏背景层
-        + SOverlay::Slot()
+    return SNew(SHorizontalBox)
+        // ===== 左侧面板 (完全不透明) =====
+        + SHorizontalBox::Slot()
+        .AutoWidth()
         [
-            SNew(SHorizontalBox)
-            // ===== 左侧面板 =====
-            + SHorizontalBox::Slot()
-            .AutoWidth()
+            SNew(SBox)
+            .WidthOverride(LeftPanelWidth)
             [
-                SNew(SBox)
-                .WidthOverride(LeftPanelWidth)
+                SNew(SBorder)
+                .BorderBackgroundColor(PanelBgColor)
+                .Padding(FMargin(0.0f))
                 [
-                    SNew(SBorder)
-                    .BorderBackgroundColor(PanelBgColor)
-                    .Padding(FMargin(0.0f))
-                    [
-                        SNew(SVerticalBox)
-                        // 标题
-                        + SVerticalBox::Slot()
-                        .AutoHeight()
-                        [
-                            SNew(SBorder)
-                            .BorderBackgroundColor(BorderColor)
-                            .Padding(FMargin(12.0f, 10.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("类别")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-                                .ColorAndOpacity(FLinearColor(0.8f, 0.8f, 0.8f))
-                            ]
-                        ]
-                        // 类别列表容器
-                        + SVerticalBox::Slot()
-                        .FillHeight(1.0f)
-                        [
-                            SAssignNew(LeftPanelContainer, SBox)
-                        ]
-                    ]
-                ]
-            ]
-            // ===== 中间区域 (画面 + 底部) =====
-            + SHorizontalBox::Slot()
-            .FillWidth(1.0f)
-            [
-                SNew(SVerticalBox)
-                // 3D画面区域 - 透明
-                + SVerticalBox::Slot()
-                .FillHeight(1.0f)
-                [
-                    SAssignNew(ViewportContainer, SBox)
-                    // 透明，让3D画面显示
-                ]
-                // 底部面板 - 时间轴 + 多镜头
-                + SVerticalBox::Slot()
-                .AutoHeight()
-                [
-                    SNew(SBox)
-                    .HeightOverride(BottomPanelHeight)
+                    SNew(SVerticalBox)
+                    // 标题栏
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
                     [
                         SNew(SBorder)
-                        .BorderBackgroundColor(PanelBgColor)
-                        .Padding(FMargin(0.0f))
+                        .BorderBackgroundColor(HeaderBgColor)
+                        .Padding(FMargin(12.0f, 10.0f))
                         [
-                            SNew(SVerticalBox)
-                            // 时间轴控制容器
-                            + SVerticalBox::Slot()
-                            .FillHeight(1.0f)
-                            [
-                                SAssignNew(BottomPanelContainer, SBox)
-                            ]
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("类别")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                            .ColorAndOpacity(TextColor)
                         ]
+                    ]
+                    // 类别列表区域
+                    + SVerticalBox::Slot()
+                    .FillHeight(1.0f)
+                    [
+                        SAssignNew(LeftPanelContainer, SBox)
                     ]
                 ]
             ]
-            // ===== 右侧面板 =====
-            + SHorizontalBox::Slot()
-            .AutoWidth()
+        ]
+        // ===== 中间区域 (3D画面 + 底部控制) =====
+        + SHorizontalBox::Slot()
+        .FillWidth(1.0f)
+        [
+            SNew(SVerticalBox)
+            // 3D画面区域 - 完全透明，视口会渲染到这里
+            + SVerticalBox::Slot()
+            .FillHeight(1.0f)
+            [
+                SAssignNew(ViewportContainer, SBox)
+                // 不添加任何内容，保持透明
+            ]
+            // 底部面板 - 时间轴 + 多镜头 (完全不透明)
+            + SVerticalBox::Slot()
+            .AutoHeight()
             [
                 SNew(SBox)
-                .WidthOverride(RightPanelWidth)
+                .HeightOverride(BottomPanelHeight)
                 [
                     SNew(SBorder)
                     .BorderBackgroundColor(PanelBgColor)
-                    .Padding(FMargin(0.0f))
+                    .Padding(FMargin(8.0f, 5.0f))
                     [
-                        SNew(SVerticalBox)
-                        // 标题
-                        + SVerticalBox::Slot()
-                        .AutoHeight()
+                        SAssignNew(BottomPanelContainer, SBox)
+                    ]
+                ]
+            ]
+        ]
+        // ===== 右侧面板 (完全不透明) =====
+        + SHorizontalBox::Slot()
+        .AutoWidth()
+        [
+            SNew(SBox)
+            .WidthOverride(RightPanelWidth)
+            [
+                SNew(SBorder)
+                .BorderBackgroundColor(PanelBgColor)
+                .Padding(FMargin(0.0f))
+                [
+                    SNew(SVerticalBox)
+                    // 标题栏
+                    + SVerticalBox::Slot()
+                    .AutoHeight()
+                    [
+                        SNew(SBorder)
+                        .BorderBackgroundColor(HeaderBgColor)
+                        .Padding(FMargin(12.0f, 10.0f))
                         [
-                            SNew(SBorder)
-                            .BorderBackgroundColor(BorderColor)
-                            .Padding(FMargin(12.0f, 10.0f))
-                            [
-                                SNew(STextBlock)
-                                .Text(FText::FromString(TEXT("参数")))
-                                .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-                                .ColorAndOpacity(FLinearColor(0.8f, 0.8f, 0.8f))
-                            ]
+                            SNew(STextBlock)
+                            .Text(FText::FromString(TEXT("参数")))
+                            .Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+                            .ColorAndOpacity(TextColor)
                         ]
-                        // 参数面板容器
-                        + SVerticalBox::Slot()
-                        .FillHeight(1.0f)
-                        [
-                            SAssignNew(RightPanelContainer, SBox)
-                        ]
+                    ]
+                    // 参数面板区域
+                    + SVerticalBox::Slot()
+                    .FillHeight(1.0f)
+                    [
+                        SAssignNew(RightPanelContainer, SBox)
                     ]
                 ]
             ]
