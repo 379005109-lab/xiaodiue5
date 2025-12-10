@@ -3,6 +3,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "TimerManager.h"
 
 AViewerHUD::AViewerHUD()
 {
@@ -98,6 +100,22 @@ void AViewerHUD::SetupUI()
         MainLayout->SetAnchorsInViewport(FAnchors(0.0f, 0.0f, 1.0f, 1.0f)); // 左上到右下
         MainLayout->SetAlignmentInViewport(FVector2D(0.0f, 0.0f));
         MainLayout->SetPositionInViewport(FVector2D(0.0f, 0.0f));
+        
+        // 延迟获取 ViewerPawn 的 RenderTarget (因为 RenderTarget 在 BeginPlay 后创建)
+        FTimerHandle TimerHandle;
+        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, PC]()
+        {
+            if (MainLayout && PC)
+            {
+                if (AViewerPawn* ViewerPawn = Cast<AViewerPawn>(PC->GetPawn()))
+                {
+                    if (UTextureRenderTarget2D* RT = ViewerPawn->GetRenderTarget())
+                    {
+                        MainLayout->SetRenderTarget(RT);
+                    }
+                }
+            }
+        }, 0.2f, false);
     }
     
     // 类别标签 (左侧面板内)

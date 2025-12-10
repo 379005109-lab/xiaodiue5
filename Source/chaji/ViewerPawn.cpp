@@ -33,6 +33,25 @@ AViewerPawn::AViewerPawn()
     CameraComp->PostProcessSettings.bOverride_DepthOfFieldMinFstop = true;
     CameraComp->PostProcessSettings.DepthOfFieldMinFstop = 1.2f;
     
+    // ============ 创建 SceneCapture2D 用于将3D场景渲染到纹理 ============
+    SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
+    SceneCapture->SetupAttachment(CameraComp);
+    SceneCapture->SetRelativeLocation(FVector::ZeroVector);
+    SceneCapture->SetRelativeRotation(FRotator::ZeroRotator);
+    
+    // 场景捕获设置
+    SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalToneCurveHDR;
+    SceneCapture->bCaptureEveryFrame = true;
+    SceneCapture->bCaptureOnMovement = false;
+    SceneCapture->bAlwaysPersistRenderingState = true;
+    
+    // 复制相机的后处理设置到场景捕获
+    SceneCapture->PostProcessSettings = CameraComp->PostProcessSettings;
+    SceneCapture->PostProcessBlendWeight = 1.0f;
+    
+    // 创建渲染目标纹理 (在BeginPlay中初始化大小)
+    // RenderTarget 将在 BeginPlay 中创建
+    
     // Get movement component and set speed
     if (UFloatingPawnMovement* Movement = Cast<UFloatingPawnMovement>(GetMovementComponent()))
     {
@@ -40,6 +59,47 @@ AViewerPawn::AViewerPawn()
         Movement->Acceleration = 4000.0f;
         Movement->Deceleration = 8000.0f;
     }
+}
+
+void AViewerPawn::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    // 计算视口中间区域的大小
+    // 左侧面板: 180px, 右侧面板: 300px, 底部面板: 150px
+    // 假设屏幕分辨率 1920x1080
+    FVector2D ViewportSize(1920.0f, 1080.0f);
+    if (GEngine && GEngine->GameViewport)
+    {
+        GEngine->GameViewport->GetViewportSize(ViewportSize);
+    }
+    
+    const float LeftPanelWidth = 180.0f;
+    const float RightPanelWidth = 300.0f;
+    const float BottomPanelHeight = 150.0f;
+    
+    // 计算3D视图区域大小
+    int32 ViewWidth = FMath::RoundToInt(ViewportSize.X - LeftPanelWidth - RightPanelWidth);
+    int32 ViewHeight = FMath::RoundToInt(ViewportSize.Y - BottomPanelHeight);
+    
+    // 创建渲染目标纹理
+    RenderTarget = NewObject<UTextureRenderTarget2D>(this);
+    RenderTarget->InitAutoFormat(ViewWidth, ViewHeight);
+    RenderTarget->UpdateResourceImmediate(true);
+    
+    // 设置场景捕获的渲染目标
+    if (SceneCapture)
+    {
+        SceneCapture->TextureTarget = RenderTarget;
+        
+        // 设置场景捕获的FOV与主相机一致
+        if (CameraComp)
+        {
+            SceneCapture->FOVAngle = CameraComp->FieldOfView;
+        }
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("RenderTarget created: %dx%d"), ViewWidth, ViewHeight);
 }
 
 void AViewerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
