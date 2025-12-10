@@ -165,36 +165,17 @@ void ASceneLauncherHUD::SaveScenesToLocal()
 
 void ASceneLauncherHUD::AddDemoScenes()
 {
-    // 添加示例场景用于测试
-    TArray<FString> DemoNames = {
-        TEXT("现代卧室"), TEXT("板材拍摄"), TEXT("空白场景"), TEXT("意式客餐厅"),
-        TEXT("摄影棚"), TEXT("中古风客餐厅-028"), TEXT("现代客餐厅"), TEXT("奶油风卧室")
-    };
-    
-    TArray<FString> DemoStyles = {
-        TEXT("现代"), TEXT("现代"), TEXT("现代"), TEXT("意式"),
-        TEXT("现代"), TEXT("中古风"), TEXT("现代"), TEXT("奶油风")
-    };
-    
-    TArray<FString> DemoSpaces = {
-        TEXT("卧室"), TEXT("展厅"), TEXT("展厅"), TEXT("客厅"),
-        TEXT("展厅"), TEXT("客厅"), TEXT("客厅"), TEXT("卧室")
-    };
-    
-    for (int32 i = 0; i < DemoNames.Num(); i++)
-    {
-        FSceneData Scene;
-        Scene.SceneId = FString::Printf(TEXT("scene_%d"), i + 1);
-        Scene.SceneName = DemoNames[i];
-        Scene.Description = FString::Printf(TEXT("%s 场景"), *DemoNames[i]);
-        Scene.LevelPath = FString::Printf(TEXT("/Game/Levels/%s"), *DemoNames[i].Replace(TEXT(" "), TEXT("_")));
-        Scene.ProductType = TEXT("样板间");
-        Scene.Style = DemoStyles[i];
-        Scene.SpaceType = DemoSpaces[i];
-        Scene.bIsDownloaded = (i < 4); // 前4个标记为已下载
-        
-        SceneList.Add(Scene);
-    }
+    // 添加主场景 - 指向实际的 LEVEL 关卡
+    FSceneData MainScene;
+    MainScene.SceneId = TEXT("scene_main");
+    MainScene.SceneName = TEXT("主场景");
+    MainScene.Description = TEXT("诧寂主场景");
+    MainScene.LevelPath = TEXT("/Game/LEVEL");
+    MainScene.ProductType = TEXT("样板间");
+    MainScene.Style = TEXT("诧寂");
+    MainScene.SpaceType = TEXT("展示");
+    MainScene.bIsDownloaded = true;
+    SceneList.Add(MainScene);
 }
 
 void ASceneLauncherHUD::OnSceneSelected(const FSceneData& Scene)
