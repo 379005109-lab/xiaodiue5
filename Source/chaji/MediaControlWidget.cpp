@@ -164,10 +164,12 @@ TSharedRef<SWidget> UMediaControlWidget::RebuildWidget()
                         .Font(FCoreStyle::GetDefaultFontStyle("Regular", 10))
                         .ColorAndOpacity(FLinearColor(0.5f, 0.8f, 1.0f))
                     ]
-                    // 分隔
+                    // 分隔 (弹性空间)
                     + SHorizontalBox::Slot()
                     .FillWidth(1.0f)
-                    []
+                    [
+                        SNullWidget::NullWidget
+                    ]
                     // 📁 文件夹
                     + SHorizontalBox::Slot()
                     .AutoWidth()
